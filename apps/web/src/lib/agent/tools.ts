@@ -3,7 +3,6 @@
  * chooses inputs. Every argument is validated with Zod before a tool runs.
  */
 
-import { SchemaType, type FunctionDeclaration } from "@google/generative-ai";
 import { z } from "zod";
 import { allocateBudget } from "@/lib/core/budget";
 import { detectConflicts } from "@/lib/core/conflicts";
@@ -17,6 +16,8 @@ import {
   type EventBrief,
 } from "@/lib/core/types";
 
+export { TOOL_DECLARATIONS } from "./tool-declarations";
+
 export type ToolStatus = "ok" | "needs_info" | "error";
 
 export interface ToolResult {
@@ -29,92 +30,14 @@ export interface ToolInvocation {
   result: ToolResult;
 }
 
-const BRIEF_PROPERTIES = {
-  eventFamily: {
-    type: SchemaType.STRING,
-    description: "One of: wedding, birthday_milestone, community",
-  },
-  eventSubtype: {
-    type: SchemaType.STRING,
-    description: "E.g. Punjabi wedding, 1st birthday, Durga Puja",
-  },
-  eventDate: { type: SchemaType.STRING, description: "YYYY-MM-DD" },
-  city: { type: SchemaType.STRING, description: "City name" },
-  cityTier: { type: SchemaType.STRING, description: "One of: metro, tier1, tier2, destination" },
-  guestCount: { type: SchemaType.INTEGER, description: "Number of guests" },
-  budgetAmountMinor: {
-    type: SchemaType.INTEGER,
-    description: "Total budget in paise (₹1 = 100 paise)",
-  },
-  currency: { type: SchemaType.STRING, description: "ISO currency code, e.g. INR" },
-  communities: {
-    type: SchemaType.STRING,
-    description: "Comma-separated communities the user declared",
-  },
-  dietary: { type: SchemaType.STRING, description: "Comma-separated dietary requirements" },
-} as const;
-
-export const TOOL_DECLARATIONS: FunctionDeclaration[] = [
-  {
-    name: "extract_brief",
-    description:
-      "Record the structured brief extracted from the user's description. Include only fields the user actually stated; never guess community or faith from a name.",
-    parameters: { type: SchemaType.OBJECT, properties: BRIEF_PROPERTIES },
-  },
-  {
-    name: "allocate_budget",
-    description:
-      "Deterministic budget allocation with category splits, per-head cost, contingency and source citations. NEVER calculate budget numbers yourself.",
-    parameters: {
-      type: SchemaType.OBJECT,
-      properties: BRIEF_PROPERTIES,
-      required: ["eventFamily", "eventDate", "city", "guestCount", "budgetAmountMinor"],
-    },
-  },
-  {
-    name: "generate_timeline",
-    description:
-      "Reverse-planned task timeline from the event date, sorted by due date. NEVER calculate dates yourself.",
-    parameters: {
-      type: SchemaType.OBJECT,
-      properties: BRIEF_PROPERTIES,
-      required: ["eventFamily", "eventDate"],
-    },
-  },
-  {
-    name: "detect_conflicts",
-    description:
-      "Check the plan for budget overallocation, unrealistic per-head costs, past dates, short lead times and dependency cycles.",
-    parameters: {
-      type: SchemaType.OBJECT,
-      properties: BRIEF_PROPERTIES,
-      required: ["eventFamily", "eventDate", "guestCount", "budgetAmountMinor"],
-    },
-  },
-  {
-    name: "generate_ideas",
-    description:
-      "Frame a request for creative ideas: themes, decor, menu, entertainment, favours, invite copy or playlists.",
-    parameters: {
-      type: SchemaType.OBJECT,
-      properties: {
-        category: {
-          type: SchemaType.STRING,
-          description: "theme, decor, menu, entertainment, favors, invite_copy or playlist",
-        },
-        context: {
-          type: SchemaType.STRING,
-          description: "What the user wants ideas for, with constraints",
-        },
-      },
-      required: ["category", "context"],
-    },
-  },
-];
+const MAX_LIST_CHARS = 300;
+const MAX_GUESTS = 100_000;
+/** ₹100 crore, in paise. */
+const MAX_BUDGET_MINOR = 100_00_00_000_00;
 
 const csvList = z
   .string()
-  .max(300)
+  .max(MAX_LIST_CHARS)
   .transform((value) =>
     value
       .split(",")
@@ -122,7 +45,7 @@ const csvList = z
       .filter(Boolean)
   );
 
-const lowerCased = (schema: z.ZodTypeAny) =>
+const lowerCased = (schema: z.ZodTypeAny): z.ZodTypeAny =>
   z.preprocess((value) => (typeof value === "string" ? value.trim().toLowerCase() : value), schema);
 
 const BriefArgsSchema = z.object({
@@ -134,8 +57,8 @@ const BriefArgsSchema = z.object({
     .optional(),
   city: z.string().trim().min(1).max(80).optional(),
   cityTier: lowerCased(z.enum(["metro", "tier1", "tier2", "destination"])).optional(),
-  guestCount: z.number().int().positive().max(100_000).optional(),
-  budgetAmountMinor: z.number().int().positive().max(100_00_00_000_00).optional(),
+  guestCount: z.number().int().positive().max(MAX_GUESTS).optional(),
+  budgetAmountMinor: z.number().int().positive().max(MAX_BUDGET_MINOR).optional(),
   currency: z.string().trim().length(3).toUpperCase().optional(),
   communities: csvList.optional(),
   dietary: csvList.optional(),
@@ -202,37 +125,24 @@ function invalidArgs(error: z.ZodError): ToolResult {
   };
 }
 
-export function executeTool(
-  name: string,
-  rawArgs: unknown,
-  existingBrief?: EventBrief
-): ToolResult {
-  if (name === "generate_ideas") {
-    const args = IdeasArgsSchema.safeParse(rawArgs ?? {});
-    if (!args.success) return invalidArgs(args.error);
-    const context = args.data.context.replace(/<\/?untrusted_data>/gi, "");
-    return {
-      status: "ok",
-      category: args.data.category,
-      context: `<untrusted_data>${context}</untrusted_data>`,
-      guidance:
-        "Give 4–6 specific, culturally appropriate ideas. Quote no prices unless a tool produced them.",
-    };
-  }
-
-  const args = BriefArgsSchema.safeParse(rawArgs ?? {});
+/** User-supplied context is fenced as untrusted data so the model reads it, never obeys it. */
+function ideasTool(rawArgs: unknown): ToolResult {
+  const args = IdeasArgsSchema.safeParse(rawArgs ?? {});
   if (!args.success) return invalidArgs(args.error);
+  const context = args.data.context.replace(/<\/?untrusted_data>/gi, "");
+  return {
+    status: "ok",
+    category: args.data.category,
+    context: `<untrusted_data>${context}</untrusted_data>`,
+    guidance:
+      "Give 4–6 specific, culturally appropriate ideas. Quote no prices unless a tool produced them.",
+  };
+}
 
-  if (name === "extract_brief") {
-    const resolution = resolveBrief(args.data, existingBrief);
-    return resolution.ok ? { status: "ok", brief: resolution.brief } : resolution.result;
-  }
-
-  const resolution = resolveBrief(args.data, existingBrief);
-  if (!resolution.ok) return resolution.result;
-  const brief = resolution.brief;
-
+function briefTool(name: string, brief: EventBrief): ToolResult {
   switch (name) {
+    case "extract_brief":
+      return { status: "ok", brief };
     case "allocate_budget":
       return { status: "ok", plan: allocateBudget(brief) };
     case "generate_timeline": {
@@ -246,6 +156,20 @@ export function executeTool(
     default:
       return { status: "error", error: "Unknown tool" };
   }
+}
+
+export function executeTool(
+  name: string,
+  rawArgs: unknown,
+  existingBrief?: EventBrief
+): ToolResult {
+  if (name === "generate_ideas") return ideasTool(rawArgs);
+
+  const args = BriefArgsSchema.safeParse(rawArgs ?? {});
+  if (!args.success) return invalidArgs(args.error);
+
+  const resolution = resolveBrief(args.data, existingBrief);
+  return resolution.ok ? briefTool(name, resolution.brief) : resolution.result;
 }
 
 /** Deterministic, fully traceable budget summary used when model text fails a guardrail. */

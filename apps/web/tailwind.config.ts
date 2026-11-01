@@ -1,11 +1,10 @@
 import type { Config } from "tailwindcss";
-import tokens from "./tailwind.tokens.js";
+import tokens from "./tailwind.tokens";
 
-// Theme lives only in tailwind.tokens.js so every surface shares one palette. Do not add colours here.
+// The theme lives only in tailwind.tokens.ts so every surface shares one palette.
 const config: Config = {
   content: ["./src/**/*.{ts,tsx}"],
-  darkMode: tokens.darkMode as Config["darkMode"],
-  theme: tokens.theme as unknown as Config["theme"],
+  theme: tokens.theme,
   plugins: [],
 };
 

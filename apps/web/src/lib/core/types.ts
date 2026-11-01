@@ -1,9 +1,8 @@
 import { z } from "zod";
 
 /**
- * Shared schema. This is the contract between the deterministic engine, the model layer,
- * and the UI. Model output is validated against these before it is allowed anywhere near
- * a user. See BUILD_PROMPT.md §4.
+ * Shared schema: the contract between the deterministic engine, the model layer and the UI.
+ * Model output is validated against these before it reaches a user.
  */
 
 // --- Money -------------------------------------------------------------------------------
@@ -41,7 +40,7 @@ export const EventBriefSchema = z.object({
   guestCount: z.number().int().positive(),
   budget: MoneySchema.extend({ amountMinor: z.number().int().positive() }),
   budgetFlexibility: BudgetFlexibility.default("soft"),
-  /** User-DECLARED only. Never inferred from a name. See BUILD_PROMPT.md §7. */
+  /** User-declared only. Never inferred from a name. */
   communities: z.array(z.string()).default([]),
   ritualsOptIn: z.array(z.string()).default([]),
   dietary: z.array(z.string()).default([]),

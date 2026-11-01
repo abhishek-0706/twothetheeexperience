@@ -6,7 +6,7 @@ one pass. Sections marked **MUST** are non-negotiable acceptance criteria.
 
 **Companion documents — read before writing code:**
 - `design/DESIGN_SYSTEM.md` — tokens, typography, component inventory, screen specs, accessibility findings, build notes
-- `design/tailwind.tokens.js` — the token source of truth
+- `apps/web/tailwind.tokens.ts` — the token source of truth
 - `design/mockups/` — the two supplied HTML mockups (Hub, Timeline/Run-of-Show). Reference only; prototype code, not shippable.
 
 ---
@@ -406,7 +406,7 @@ silently. Test it with the network throttled and offline.
 
 WCAG 2.2 AA, keyboard navigable, screen-reader labelled. Specifically, and verified in CI:
 
-- **Ship a contrast unit test** over every token pair used in the component library. Three pairs in the mockups fail AA (`outline` on surface 4.25:1; `#8E6E26` on `#FAF4E7` 4.35:1; `#4A7C59` on `#EDF4EF` 4.35:1) and are already corrected in `tailwind.tokens.js`. This palette sits close enough to the line that it will regress without the test.
+- **Ship a contrast unit test** over every token pair used in the component library. Three pairs in the mockups fail AA (`outline` on surface 4.25:1; `#8E6E26` on `#FAF4E7` 4.35:1; `#4A7C59` on `#EDF4EF` 4.35:1) and are already corrected in `tailwind.tokens.ts`. This palette sits close enough to the line that it will regress without the test.
 - Real `alt` text on all images — the mockups use `data-alt`, which gives no accessible name at all.
 - `aria-label` on timeline status markers; they convey state by colour alone.
 - `prefers-reduced-motion` guards on the live-sync pulse and active-item glow.
@@ -418,7 +418,7 @@ WCAG 2.2 AA, keyboard navigable, screen-reader labelled. Specifically, and verif
 ## 12. Phase plan and acceptance criteria
 
 **Phase 0 — Foundation + design system (week 1)**
-Repo scaffold, design tokens wired from `design/tailwind.tokens.js`, component library in
+Repo scaffold, design tokens wired from `apps/web/tailwind.tokens.ts`, component library in
 Storybook, shared schema package, DB migrations, auth, OTel + Langfuse wiring, prompt registry,
 eval harness that runs green in CI including the contrast test.
 *Accept:* `evals-fast` runs in CI on a PR and gates merge; both mockup screens render from the

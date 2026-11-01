@@ -1,8 +1,4 @@
-/**
- * System prompt — stored here as the prompt registry seed.
- * Content-hash versioned: every eval result records (promptHash, modelId, datasetVersion).
- * BUILD_PROMPT.md §5.
- */
+/** System prompt, versioned by content hash so every response records which prompt produced it. */
 
 export const SYSTEM_PROMPT = `You are twothetheeexperience, a celebration planning assistant for the Indian market.
 

@@ -1,11 +1,10 @@
 import type { EventFamily } from "../core/types";
 
 /**
- * Locale pack: in-IN (first and only pack in v1).
+ * Locale pack: in-IN.
  *
  * Everything market-specific lives here — currency, vendor taxonomy, cost bands, ritual
  * templates, planning task templates. A second market is a new file, not a refactor.
- * See DESIGN_SYSTEM.md §7 for the market decision.
  *
  * COST BANDS ARE RANGES WITH A DATE AND A SOURCE. Never a point estimate, never a promise.
  * In production these load from the licensed benchmark corpus; here they are a seed sample

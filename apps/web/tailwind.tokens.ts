@@ -1,14 +1,16 @@
+import type { Config } from "tailwindcss";
+
 /**
  * twothetheeexperience design tokens — single source of truth.
  *
  * Extracted verbatim from the product-owner mockups, plus:
  *   [+] semantic tokens promoted from ad-hoc hex values used in the mockup markup
- *   [!] three foreground values darkened to clear WCAG 2.2 AA (see DESIGN_SYSTEM.md §8)
+ *   [!] three foreground values darkened to clear WCAG 2.2 AA contrast
  *
  * Consumed by apps/web/tailwind.config.ts. No raw hex in component code.
  */
 
-const palette = {
+export const palette = {
   // --- Core surfaces (warm ivory ground, white cards) ---
   background: "#fbf9f6",
   surface: "#fbf9f6",
@@ -70,7 +72,7 @@ const palette = {
 
   // --- [+] Promoted from ad-hoc hex in the mockups ---
   // Success = on time / verified / under budget. The ONLY success colour.
-  success: "#4a7c59",
+  success: "#477856", // [!] was #4a7c59 — 4.39:1 on surface-container-low, failed AA
   "success-container": "#edf4ef",
   "on-success-container": "#3f6b4c", // [!] was #4a7c59 — 4.35:1 on container, failed AA
 
@@ -86,8 +88,7 @@ const palette = {
   "gold-foil": "#c5a059",
 };
 
-module.exports = {
-  darkMode: "class", // NOTE: no dark scheme exists yet. Produce one or remove this.
+const tokens = {
   theme: {
     extend: {
       colors: palette,
@@ -173,6 +174,6 @@ module.exports = {
       },
     },
   },
-};
+} satisfies Pick<Config, "theme">;
 
-module.exports.palette = palette;
+export default tokens;

@@ -55,6 +55,99 @@ function findCycles(tasks: TimelineTask[]): string[] {
   return [...inDegree].filter(([, deg]) => deg > 0).map(([id]) => id);
 }
 
+interface ConflictContext {
+  brief: EventBrief;
+  budget: BudgetPlan;
+  tasks: TimelineTask[];
+  today: string;
+}
+
+type ConflictCheck = (ctx: ConflictContext) => Conflict | null;
+
+function checkBudgetSum({ budget }: ConflictContext): Conflict | null {
+  const linesSum = sum(
+    budget.lines.map((l) => l.allocated),
+    budget.total.currency
+  );
+  const expectedAllocatable = budget.total.amountMinor - budget.contingency.amountMinor;
+  const drift = Math.abs(linesSum.amountMinor - expectedAllocatable);
+  if (drift <= MAX_DRIFT_MINOR) return null;
+  return ConflictSchema.parse({
+    kind: "budget_overallocated",
+    severity: "blocker",
+    message: `Budget lines sum to ${linesSum.amountMinor} minor units but allocatable is ${expectedAllocatable} (drift: ${drift})`,
+    refs: ["budget.lines", "budget.total"],
+  });
+}
+
+function checkPerHeadFloor({ brief, budget }: ConflictContext): Conflict | null {
+  const band = costBandFor("catering", brief.cityTier);
+  if (!band || band.basis !== "per_head" || budget.perHead.amountMinor >= band.lowMinor) {
+    return null;
+  }
+  const perHeadRupees = Math.round(budget.perHead.amountMinor / 100);
+  const floorRupees = Math.round(band.lowMinor / 100);
+  return ConflictSchema.parse({
+    kind: "budget_unrealistic_per_head",
+    severity: "warning",
+    message: `Per-head budget of Rs ${perHeadRupees} is below the catering floor of Rs ${floorRupees} for ${brief.cityTier} tier`,
+    refs: ["budget.perHead", "catering cost band"],
+  });
+}
+
+function checkDateInPast({ brief, today }: ConflictContext): Conflict | null {
+  if (brief.eventDate >= today) return null;
+  return ConflictSchema.parse({
+    kind: "date_in_past",
+    severity: "blocker",
+    message: `Event date ${brief.eventDate} is in the past (today: ${today})`,
+    refs: ["brief.eventDate"],
+  });
+}
+
+function checkWeddingLeadTime({ brief, today }: ConflictContext): Conflict | null {
+  if (brief.eventFamily !== "wedding") return null;
+  const leadDays = daysBetween(today, brief.eventDate);
+  if (leadDays < 0 || leadDays >= MIN_WEDDING_LEAD_DAYS) return null;
+  return ConflictSchema.parse({
+    kind: "lead_time_too_short",
+    severity: "warning",
+    message: `Only ${leadDays} days until the wedding; minimum recommended lead time is 30 days`,
+    refs: ["brief.eventDate", "brief.eventFamily"],
+  });
+}
+
+function checkDependencyCycle({ tasks }: ConflictContext): Conflict | null {
+  const cycleIds = findCycles(tasks);
+  if (cycleIds.length === 0) return null;
+  return ConflictSchema.parse({
+    kind: "dependency_cycle",
+    severity: "blocker",
+    message: `Dependency cycle detected among tasks: ${cycleIds.join(", ")}`,
+    refs: cycleIds.map((id) => `task:${id}`),
+  });
+}
+
+function checkVenueCapacity({ brief }: ConflictContext): Conflict | null {
+  const capacityCap = TYPICAL_CAPACITY[brief.cityTier];
+  if (brief.guestCount <= capacityCap) return null;
+  return ConflictSchema.parse({
+    kind: "capacity_exceeded",
+    severity: "warning",
+    message: `Guest count of ${brief.guestCount} exceeds typical ${brief.cityTier} venue capacity of ${capacityCap}`,
+    refs: ["brief.guestCount", "brief.cityTier"],
+  });
+}
+
+const CHECKS: readonly ConflictCheck[] = [
+  checkBudgetSum,
+  checkPerHeadFloor,
+  checkDateInPast,
+  checkWeddingLeadTime,
+  checkDependencyCycle,
+  checkVenueCapacity,
+];
+
 /**
  * Deterministic checks over the brief, budget and timeline. `today` is injectable so
  * date-based checks are reproducible under test.
@@ -65,95 +158,6 @@ export function detectConflicts(
   tasks: TimelineTask[],
   today: string = localISODate(new Date())
 ): Conflict[] {
-  const conflicts: Conflict[] = [];
-
-  // 1. Budget lines sum matches total
-  const linesSum = sum(
-    budget.lines.map((l) => l.allocated),
-    budget.total.currency
-  );
-  const expectedAllocatable = budget.total.amountMinor - budget.contingency.amountMinor;
-  const drift = Math.abs(linesSum.amountMinor - expectedAllocatable);
-  if (drift > MAX_DRIFT_MINOR) {
-    conflicts.push(
-      ConflictSchema.parse({
-        kind: "budget_overallocated",
-        severity: "blocker",
-        message: `Budget lines sum to ${linesSum.amountMinor} minor units but allocatable is ${expectedAllocatable} (drift: ${drift})`,
-        refs: ["budget.lines", "budget.total"],
-      })
-    );
-  }
-
-  // 2. Per-head below cost band floor for catering
-  const cateringBand = costBandFor("catering", brief.cityTier);
-  if (cateringBand && cateringBand.basis === "per_head") {
-    if (budget.perHead.amountMinor < cateringBand.lowMinor) {
-      const perHeadRupees = Math.round(budget.perHead.amountMinor / 100);
-      const floorRupees = Math.round(cateringBand.lowMinor / 100);
-      conflicts.push(
-        ConflictSchema.parse({
-          kind: "budget_unrealistic_per_head",
-          severity: "warning",
-          message: `Per-head budget of Rs ${perHeadRupees} is below the catering floor of Rs ${floorRupees} for ${brief.cityTier} tier`,
-          refs: ["budget.perHead", "catering cost band"],
-        })
-      );
-    }
-  }
-
-  // 3. Event date in the past
-  if (brief.eventDate < today) {
-    conflicts.push(
-      ConflictSchema.parse({
-        kind: "date_in_past",
-        severity: "blocker",
-        message: `Event date ${brief.eventDate} is in the past (today: ${today})`,
-        refs: ["brief.eventDate"],
-      })
-    );
-  }
-
-  // 4. Lead time < 30 days for a wedding
-  if (brief.eventFamily === "wedding") {
-    const leadDays = daysBetween(today, brief.eventDate);
-    if (leadDays >= 0 && leadDays < MIN_WEDDING_LEAD_DAYS) {
-      conflicts.push(
-        ConflictSchema.parse({
-          kind: "lead_time_too_short",
-          severity: "warning",
-          message: `Only ${leadDays} days until the wedding; minimum recommended lead time is 30 days`,
-          refs: ["brief.eventDate", "brief.eventFamily"],
-        })
-      );
-    }
-  }
-
-  // 5. Dependency graph has cycles
-  const cycleIds = findCycles(tasks);
-  if (cycleIds.length > 0) {
-    conflicts.push(
-      ConflictSchema.parse({
-        kind: "dependency_cycle",
-        severity: "blocker",
-        message: `Dependency cycle detected among tasks: ${cycleIds.join(", ")}`,
-        refs: cycleIds.map((id) => `task:${id}`),
-      })
-    );
-  }
-
-  // 6. Guest count exceeds typical venue capacity for the city tier
-  const capacityCap = TYPICAL_CAPACITY[brief.cityTier];
-  if (brief.guestCount > capacityCap) {
-    conflicts.push(
-      ConflictSchema.parse({
-        kind: "capacity_exceeded",
-        severity: "warning",
-        message: `Guest count of ${brief.guestCount} exceeds typical ${brief.cityTier} venue capacity of ${capacityCap}`,
-        refs: ["brief.guestCount", "brief.cityTier"],
-      })
-    );
-  }
-
-  return conflicts;
+  const ctx: ConflictContext = { brief, budget, tasks, today };
+  return CHECKS.flatMap((check) => check(ctx) ?? []);
 }

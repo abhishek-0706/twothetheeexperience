@@ -93,8 +93,8 @@
   }
 }
 
-/* DESIGN_SYSTEM.md §8 — reduced-motion guard for the live-sync pulse, active glow,
-   press-scale effects and smooth scrolling. */
+/* Reduced-motion guard for the live-sync pulse, active glow, press-scale effects and
+   smooth scrolling. */
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto !important;

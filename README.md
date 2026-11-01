@@ -42,9 +42,14 @@ Post-flight guardrails ── budget invariant · figure traceability · content
 | Path | Contents |
 |---|---|
 | `apps/web/src/lib/core/` | `money`, `budget`, `timeline`, `cascade`, `conflicts`, `types` (Zod contracts) |
-| `apps/web/src/lib/agent/` | `guardrails`, `rate-limit`, `tools` (Gemini function declarations), `system-prompt` |
+| `apps/web/src/lib/agent/` | `orchestrator` (Gemini tool loop), `model-call` (timeout + retry), `tools` and `tool-declarations`, `request-schema`, `rate-limit`, `system-prompt` |
+| `apps/web/src/lib/agent/guardrails/` | One module per check: `pii`, `injection`, `scope`, `policy`, `budget-invariant`, `traceability` |
+| `apps/web/src/lib/client/` | Typed, Zod-validated chat client shared by Hub and Studio |
+| `apps/web/src/lib/demo/` | Demo brief and run-of-show data |
 | `apps/web/src/lib/locale/in-IN.ts` | Categories, cost bands, ceremonies, task templates. A new market is a new file. |
-| `apps/web/src/app/` | Hub, Budget, Timeline, Studio pages and `api/chat` |
+| `apps/web/src/app/` | Thin pages (Hub, Budget, Timeline, Studio) and the `api/chat` route handler |
+| `apps/web/src/components/` | Feature components (`hub`, `chat`, `timeline`, `budget`, `studio`) and shared `ui` |
+| `apps/web/src/hooks/` | `usePlan`, `useConciergeChat`, `useIdeaGenerator` |
 | `apps/web/evals/` | Vitest suite |
 | `demo/tooling/` | Reproducible demo-video pipeline (Playwright + FFmpeg + TTS) |
 
@@ -73,7 +78,7 @@ Post-flight guardrails ── budget invariant · figure traceability · content
 - A skip link jumps to the main content, and each page has one `<main>` landmark.
 - Chat replies, delay-cascade results and generated ideas are announced through live regions. Loading states use `role="status"` and errors use `role="alert"`.
 - Visible `:focus-visible` outlines and labelled controls, and motion is disabled under `prefers-reduced-motion`.
-- Colour tokens were contrast-checked against AA. Three mockup colours were darkened to pass (`design/DESIGN_SYSTEM.md`).
+- Colour tokens are contrast-tested by the test suite (`contrast.test.ts`): every text colour on every light surface, and every `on-*` colour on its container, must reach 4.5:1. Four mockup colours were darkened to pass.
 - The layout is mobile-first and built for one-handed use on the wedding day.
 
 ## Testing
@@ -94,6 +99,7 @@ npm run test:coverage  # coverage for src/lib/core
 | `cascade.test.ts` | Propagation, compression, pinned muhurat boundaries, multiple pinned items, diamond dependencies, negative delays, immutability |
 | `locale.test.ts` | Weights sum to 100 per family, tier multipliers, citation format, ceremonies per community, template dependency order |
 | `types.test.ts` | Accept/reject cases for every Zod contract |
+| `contrast.test.ts` | WCAG 2.2 AA contrast for every text/surface token pair |
 | `guardrails.test.ts` | Adversarial injections, benign-but-tricky requests (interfaith, dry weddings, low budgets), PII, policy, traceability |
 | `chat-route.test.ts` | API route with Gemini mocked: validation, size limits, rate limiting, history injection, traceability fallback |
 

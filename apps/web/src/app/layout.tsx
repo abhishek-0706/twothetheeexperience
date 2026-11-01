@@ -1,7 +1,23 @@
 import type { Metadata } from "next";
+import { Playfair_Display, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import AppBar from "@/components/AppBar";
 import BottomNav from "@/components/BottomNav";
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  style: ["normal", "italic"],
+  variable: "--font-playfair",
+  display: "swap",
+});
+
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-jakarta",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "twothetheeexperience — Celebration & Event Planner",
@@ -11,18 +27,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en-IN" className="light">
+    <html lang="en-IN" className={`light ${playfair.variable} ${jakarta.variable}`}>
       <head>
-        {/* Prototype: CDN fonts. Replace with next/font for production. The
-            no-page-custom-font rule targets pages/_document and misfires in the App Router
-            root layout, which already applies to every route. */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        {/* Material Symbols is a variable icon font that next/font cannot subset; the
+            no-page-custom-font rule targets pages/_document and misfires in the App Router. */}
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-        <link
-          href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}
         <link
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"

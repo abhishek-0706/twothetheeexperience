@@ -3,7 +3,7 @@
 
 > **Design:** driven by the supplied mockups. Tokens, component inventory, screen specs,
 > accessibility findings and build notes live in [design/DESIGN_SYSTEM.md](design/DESIGN_SYSTEM.md);
-> the token source of truth is [design/tailwind.tokens.js](design/tailwind.tokens.js).
+> the token source of truth is [apps/web/tailwind.tokens.ts](apps/web/tailwind.tokens.ts).
 >
 > **Market (decided):** India-first, premium segment, with locale packs so other regions drop in
 > later. Rationale in DESIGN_SYSTEM.md §7.

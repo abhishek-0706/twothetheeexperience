@@ -1,4 +1,4 @@
-import type { EventBrief } from "./core/types";
+import type { EventBrief } from "../core/types";
 
 export const DEMO_BRIEF: EventBrief = {
   eventFamily: "wedding",

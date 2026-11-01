@@ -6,7 +6,7 @@ Source: two HTML mockups supplied by the product owner —
 Drop the raw HTML into `design/mockups/` so the build agent can diff against it.
 
 Both mockups share an identical Tailwind config. That config, cleaned and corrected, is in
-`apps/web/tailwind.tokens.js` and is the **single source of truth** for the build. The mockups
+`apps/web/tailwind.tokens.ts` and is the **single source of truth** for the build. The mockups
 are prototype HTML (Tailwind CDN, inline config); they are reference, not shippable code.
 
 ---
@@ -32,7 +32,7 @@ Design intent to preserve as the product grows:
 ## 2. Colour tokens
 
 The palette uses Material 3 token naming with a custom warm-neutral scheme. Full values in
-`tailwind.tokens.js`. The ones that carry meaning:
+`tailwind.tokens.ts`. The ones that carry meaning:
 
 | Token | Value | Role |
 |---|---|---|
@@ -202,7 +202,7 @@ AA, and run it in CI. This palette is close enough to the line that it will regr
 
 ## 9. Build notes
 
-- Replace the Tailwind CDN with a real `tailwind.config.ts` generated from `tailwind.tokens.js`.
+- Replace the Tailwind CDN with a real `tailwind.config.ts` generated from `tailwind.tokens.ts`.
 - All mockup images are Google `aida-public` placeholders — replace with licensed or
   user-uploaded assets. Honour the sourcing constraint in `docs/DATA_SOURCING.md`.
 - Self-host Playfair Display and Plus Jakarta Sans via `next/font` (no render-blocking Google

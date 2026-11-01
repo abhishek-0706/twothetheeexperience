@@ -1,17 +1,6 @@
 import type { RunOfShowItem, CascadeResult, CascadeViolation } from "./types";
 import { CascadeResultSchema } from "./types";
 
-/**
- * Delay cascade engine.
- *
- * Pure deterministic graph math. Shifts a target run-of-show item by a given
- * delay, then propagates downstream through the dependency graph in
- * topological order. Flexible items absorb delay by compressing duration
- * (down to minDurationMin). Pinned items generate violations instead of moving.
- *
- * No AI, no heuristics, no side effects.
- */
-
 interface ShiftRecord {
   itemId: string;
   fromMin: number;
@@ -62,6 +51,69 @@ function downstreamInTopologicalOrder(
   return order;
 }
 
+interface CascadeState {
+  shifts: ShiftRecord[];
+  violations: CascadeViolation[];
+  affectedVendors: Set<string>;
+  absorbedMin: number;
+}
+
+function cloneItems(items: readonly RunOfShowItem[]): RunOfShowItem[] {
+  return items.map((it) => ({
+    ...it,
+    dependsOn: [...it.dependsOn],
+    vendorLeads: [...it.vendorLeads],
+    checklist: it.checklist.map((c) => ({ ...c })),
+  }));
+}
+
+function shiftStart(item: RunOfShowItem, byMin: number, state: CascadeState): void {
+  const fromMin = item.startMin;
+  item.startMin = fromMin + byMin;
+  state.shifts.push({ itemId: item.id, fromMin, toMin: item.startMin });
+  for (const vendor of item.vendorLeads) state.affectedVendors.add(vendor);
+}
+
+/** Minutes by which this item's dependencies now push past its current start. */
+function pushFromDependencies(item: RunOfShowItem, itemMap: Map<string, RunOfShowItem>): number {
+  const latestDepEnd = item.dependsOn.reduce((latest, depId) => {
+    const dep = itemMap.get(depId);
+    return dep ? Math.max(latest, dep.startMin + dep.durationMin) : latest;
+  }, item.startMin);
+  return latestDepEnd - item.startMin;
+}
+
+function pinnedViolation(item: RunOfShowItem, pushMin: number): CascadeViolation {
+  const reason = item.pinnedReason ? ` (${item.pinnedReason})` : "";
+  return {
+    itemId: item.id,
+    itemTitle: item.title,
+    kind: "pinned_overrun",
+    overrunMin: pushMin,
+    message: `"${item.title}" is pinned${reason} and cannot be shifted by ${pushMin} min`,
+  };
+}
+
+/** Flexible items compress toward minDurationMin first; whatever is left moves the start. */
+function absorbOrShift(item: RunOfShowItem, pushMin: number, state: CascadeState): void {
+  const absorbed = Math.min(item.durationMin - item.minDurationMin, pushMin);
+  if (absorbed > 0) {
+    item.durationMin -= absorbed;
+    state.absorbedMin += absorbed;
+  }
+
+  const remainingPush = pushMin - absorbed;
+  if (remainingPush > 0) {
+    shiftStart(item, remainingPush, state);
+  } else if (absorbed > 0) {
+    for (const vendor of item.vendorLeads) state.affectedVendors.add(vendor);
+  }
+}
+
+/**
+ * Shift `targetId` by `delayMin` and propagate downstream in topological order. Pinned
+ * items never move; they produce violations instead. Inputs are never mutated.
+ */
 export function cascadeDelay(
   items: RunOfShowItem[],
   targetId: string,
@@ -78,110 +130,35 @@ export function cascadeDelay(
     });
   }
 
-  // Deep clone items so we don't mutate the input
-  const cloned: RunOfShowItem[] = items.map((it) => ({
-    ...it,
-    dependsOn: [...it.dependsOn],
-    vendorLeads: [...it.vendorLeads],
-    checklist: it.checklist.map((c) => ({ ...c })),
-  }));
-
+  const cloned = cloneItems(items);
   const itemMap = new Map(cloned.map((it) => [it.id, it]));
   const target = itemMap.get(targetId);
-  if (!target) {
-    throw new Error(`Target item "${targetId}" not found`);
-  }
+  if (!target) throw new Error(`Target item "${targetId}" not found`);
 
-  const shifts: ShiftRecord[] = [];
-  const violations: CascadeViolation[] = [];
-  const affectedVendors = new Set<string>();
-  let totalAbsorbed = 0;
+  const state: CascadeState = {
+    shifts: [],
+    violations: [],
+    affectedVendors: new Set(),
+    absorbedMin: 0,
+  };
+  shiftStart(target, delayMin, state);
 
-  // Shift the target item
-  const targetOrigStart = target.startMin;
-  target.startMin = targetOrigStart + delayMin;
-  shifts.push({
-    itemId: target.id,
-    fromMin: targetOrigStart,
-    toMin: target.startMin,
-  });
-  for (const v of target.vendorLeads) affectedVendors.add(v);
-
-  // Get downstream items in topological order
-  const downstream = downstreamInTopologicalOrder(targetId, itemMap, buildDependentsMap(cloned));
-
-  for (const itemId of downstream) {
+  const dependents = buildDependentsMap(cloned);
+  for (const itemId of downstreamInTopologicalOrder(targetId, itemMap, dependents)) {
     const item = itemMap.get(itemId);
     if (!item) continue;
-
-    // Compute the earliest this item can start based on its dependencies
-    let earliestStart = item.startMin;
-    for (const depId of item.dependsOn) {
-      const dep = itemMap.get(depId);
-      if (dep) {
-        const depEnd = dep.startMin + dep.durationMin;
-        if (depEnd > earliestStart) {
-          earliestStart = depEnd;
-        }
-      }
-    }
-
-    // How much delay is being pushed into this item
-    const pushMin = earliestStart - item.startMin;
-
-    if (pushMin <= 0) {
-      // No delay reaches this item
-      continue;
-    }
-
-    if (item.pinned) {
-      // Pinned items cannot move -- generate a violation
-      violations.push({
-        itemId: item.id,
-        itemTitle: item.title,
-        kind: "pinned_overrun",
-        overrunMin: pushMin,
-        message: `"${item.title}" is pinned${item.pinnedReason ? ` (${item.pinnedReason})` : ""} and cannot be shifted by ${pushMin} min`,
-      });
-      // Don't move the pinned item -- downstream of pinned items
-      // still get processed but the pinned item stays put
-      continue;
-    }
-
-    // Try to absorb delay by compressing duration
-    const canAbsorb = item.durationMin - item.minDurationMin;
-    const absorbed = Math.min(canAbsorb, pushMin);
-    const remainingPush = pushMin - absorbed;
-
-    if (absorbed > 0) {
-      item.durationMin -= absorbed;
-      totalAbsorbed += absorbed;
-    }
-
-    if (remainingPush > 0) {
-      const origStart = item.startMin;
-      item.startMin = origStart + remainingPush;
-      shifts.push({
-        itemId: item.id,
-        fromMin: origStart,
-        toMin: item.startMin,
-      });
-      for (const v of item.vendorLeads) affectedVendors.add(v);
-    } else if (absorbed > 0) {
-      // Item absorbed the delay fully but still affected vendors
-      for (const v of item.vendorLeads) affectedVendors.add(v);
-    }
+    const pushMin = pushFromDependencies(item, itemMap);
+    if (pushMin <= 0) continue;
+    if (item.pinned) state.violations.push(pinnedViolation(item, pushMin));
+    else absorbOrShift(item, pushMin, state);
   }
-
-  // Net delay is the original delay minus all time absorbed by flexible items
-  const netDelay = delayMin - totalAbsorbed;
 
   return CascadeResultSchema.parse({
     items: cloned,
-    violations,
-    absorbedMin: totalAbsorbed,
-    netDelayMin: netDelay,
-    affectedVendorLeads: Array.from(affectedVendors),
-    shifted: shifts,
+    violations: state.violations,
+    absorbedMin: state.absorbedMin,
+    netDelayMin: delayMin - state.absorbedMin,
+    affectedVendorLeads: [...state.affectedVendors],
+    shifted: state.shifts,
   });
 }

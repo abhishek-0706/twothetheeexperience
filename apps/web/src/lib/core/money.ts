@@ -1,10 +1,8 @@
 import type { Money } from "./types";
 
 /**
- * Integer minor-unit arithmetic. No floats, ever.
- *
- * BUILD_PROMPT.md §3: the model never does arithmetic. Every rupee a user sees comes
- * through this module.
+ * Integer minor-unit arithmetic. No floats, ever: the model never does arithmetic, and
+ * every rupee a user sees comes through this module.
  */
 
 export function money(amountMinor: number, currency = "INR"): Money {
