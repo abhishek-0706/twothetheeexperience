@@ -146,6 +146,10 @@ export async function POST(req: Request): Promise<NextResponse> {
       logger.warn("chat.upstream_timeout");
       return errorResponse(504, "upstream_timeout", "The AI service took too long to respond. Please try again.");
     }
+    if (isTransientUpstreamError(error)) {
+      logger.warn("chat.upstream_busy");
+      return errorResponse(503, "upstream_busy", "The AI service is busy right now. Please try again in a moment.");
+    }
     logger.error("chat.unhandled_error", {
       name: error instanceof Error ? error.name : "unknown",
       message: error instanceof Error ? redactPII(error.message).slice(0, 300) : undefined,
@@ -261,7 +265,31 @@ function guardToolResult(name: string, result: ToolResult, events: GuardrailEven
   return { status: "error", error: "The budget failed integrity checks and was withheld." };
 }
 
+const TRANSIENT_STATUSES = new Set([429, 500, 503]);
+const RETRY_DELAYS_MS = [800, 2000];
+
+function isTransientUpstreamError(error: unknown): boolean {
+  const status = (error as { status?: unknown } | null)?.status;
+  return typeof status === "number" && TRANSIENT_STATUSES.has(status);
+}
+
+// Gemini returns 503 under load spikes; a short backoff usually succeeds.
 async function sendWithTimeout(chat: ChatSession, parts: Part[], deadline: number) {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await sendOnce(chat, parts, deadline);
+    } catch (error) {
+      const delay = RETRY_DELAYS_MS[attempt];
+      if (!isTransientUpstreamError(error) || delay === undefined || Date.now() + delay >= deadline) {
+        throw error;
+      }
+      logger.warn("chat.upstream_retry", { attempt: attempt + 1 });
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+}
+
+async function sendOnce(chat: ChatSession, parts: Part[], deadline: number) {
   const remaining = Math.min(MODEL_CALL_TIMEOUT_MS, deadline - Date.now());
   if (remaining <= 0) throw new UpstreamTimeoutError();
 
