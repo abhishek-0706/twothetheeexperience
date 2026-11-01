@@ -1,0 +1,38 @@
+[
+  {
+    "id": "intro",
+    "text": "twothetheeexperience. A Gen AI powered celebration and event planner for the Indian market. Budget, timeline, vendor checklists, day-of run-of-show, and personalized ideas. Every number is deterministic. The AI never does arithmetic."
+  },
+  {
+    "id": "hub",
+    "text": "The Hub shows a complete event plan from a single brief. A Punjabi wedding in Jaipur for 350 guests with a 25 lakh rupee budget. The hero card shows the countdown and readiness ring. Three metric tiles summarize budget, guests, and task progress. Active conflicts are flagged below."
+  },
+  {
+    "id": "budget",
+    "text": "The Budget screen breaks down allocations by category. Each line carries a rationale and a source citation with a date. Show the Math reveals the full provenance chain. The invariant verifier at the bottom proves that all lines plus contingency equal the total, with zero tolerance drift."
+  },
+  {
+    "id": "timeline",
+    "text": "The Timeline shows the day-of run-of-show at Rambagh Palace, Jaipur. Each item is positioned on a vertical timeline. The Pheras ceremony is pinned to its muhurat window from 4:45 PM to 6 PM. Pinned items cannot be shifted."
+  },
+  {
+    "id": "cascade",
+    "text": "The cascade engine is pure graph math, no AI involved. Typing a 20 minute delay and tapping Recalculate shifts all downstream items. Flexible items absorb time by compression. Pinned muhurat windows generate violations instead of moving. Cancel restores the original schedule."
+  },
+  {
+    "id": "chat",
+    "text": "The AI Concierge uses Gemini function calling with deterministic tool calls. Typing a wedding brief triggers extract brief and allocate budget tools. The response includes a budget split, source citations, and next-step questions. Every number traces to a tool result."
+  },
+  {
+    "id": "guardrail",
+    "text": "Guardrails run on every input and output. A prompt injection attempt is blocked immediately. The guardrail log shows injection scan blocked. A policy violation like suggesting a crash diet is caught and reframed. PII is redacted from logs. Six adversarial tests and nine benign-hard probes are in the eval harness."
+  },
+  {
+    "id": "studio",
+    "text": "The Idea Studio generates fresh, culturally appropriate ideas from the brief context. A Royal Rajasthani theme request produces specific suggestions for a palace courtyard. Changing the input to a minimalist Indo-Japanese fusion gives completely different results. Dynamic output, not hardcoded."
+  },
+  {
+    "id": "close",
+    "text": "twothetheeexperience. Deterministic planning math for the numbers. Retrieval-grounded AI for the creativity. Guardrails on every surface. An architecture that degrades to a working planner even with the model off. Built for the Indian celebration market."
+  }
+]

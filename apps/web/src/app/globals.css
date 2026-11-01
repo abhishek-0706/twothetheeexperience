@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Prototype: fonts load from the CDN link in layout.tsx.
+     Production: swap to self-hosted next/font and set these to the generated vars. */
+  --font-playfair: "Playfair Display";
+  --font-jakarta: "Plus Jakarta Sans";
+}
+
+@layer base {
+  body {
+    @apply bg-background text-on-surface antialiased;
+    font-family: var(--font-jakarta), system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  /* The three signature treatments from the mockups. Components, not utility soup. */
+  .luxury-card {
+    border: 1px solid theme("borderColor.luxury");
+    box-shadow: theme("boxShadow.luxury");
+  }
+
+  .gold-foil-top {
+    border-top: 2px solid theme("colors.gold-foil");
+  }
+
+  /* AI-initiated surfaces ONLY. If it's champagne, the AI said it. */
+  .champagne-pill {
+    background: theme("backgroundImage.champagne");
+    border: 1px solid rgb(197 160 89 / 0.35);
+  }
+
+  .ambient-glow {
+    background: theme("backgroundImage.ambient-glow");
+  }
+
+  .custom-scroll {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .custom-scroll::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Material Symbols */
+.material-symbols-outlined {
+  font-family: "Material Symbols Outlined";
+  font-weight: normal;
+  font-style: normal;
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* DESIGN_SYSTEM.md §8 — reduced-motion guard for the live-sync pulse and active glow. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
