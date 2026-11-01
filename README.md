@@ -28,7 +28,7 @@ Browser (Next.js 15 App Router, React 19, Tailwind)
 Chat API  ── rate limit → body cap → Zod schema → pre-flight guardrails
    │
    ▼
-Gemini 2.0 Flash  ⇄  function calling (max 5 rounds)
+Gemini 3.8 Flash  ⇄  function calling (max 5 rounds)
    │      extract_brief · allocate_budget · generate_timeline · detect_conflicts · generate_ideas
    ▼
 Deterministic engine (src/lib/core) ── pure functions, integer paise, Zod-validated output

@@ -38,7 +38,7 @@ import { logger } from "@/lib/logger";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const MODEL_ID = "gemini-2.0-flash";
+const MODEL_ID = process.env.GEMINI_MODEL ?? "gemini-3.8-flash";
 const MAX_BODY_BYTES = 64 * 1024;
 const MAX_MESSAGES = 30;
 const MAX_MESSAGE_CHARS = 4000;
