@@ -27,7 +27,9 @@ export default function MetricTile({
       </div>
       <div className="mt-2">
         <p className="font-title-md text-title-md text-primary leading-tight">{value}</p>
-        {subLabel && <p className="font-label-sm text-[11px] text-on-surface-variant">{subLabel}</p>}
+        {subLabel && (
+          <p className="font-label-sm text-[11px] text-on-surface-variant">{subLabel}</p>
+        )}
       </div>
       {progress !== undefined && (
         <ProgressBar

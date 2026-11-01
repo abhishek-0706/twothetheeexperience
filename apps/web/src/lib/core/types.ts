@@ -26,12 +26,15 @@ export const EventBriefSchema = z.object({
   eventDate: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .refine((d) => {
-      const parsed = new Date(`${d}T00:00:00Z`);
-      return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === d;
-    }, {
-      message: "Not a real calendar date",
-    }),
+    .refine(
+      (d) => {
+        const parsed = new Date(`${d}T00:00:00Z`);
+        return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === d;
+      },
+      {
+        message: "Not a real calendar date",
+      }
+    ),
   dateConfidence: z.enum(["fixed", "window", "undecided"]).default("fixed"),
   city: z.string().min(1),
   cityTier: z.enum(["metro", "tier1", "tier2", "destination"]).default("metro"),

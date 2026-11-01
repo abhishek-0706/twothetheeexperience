@@ -72,10 +72,12 @@ export default function StudioPage() {
         <p className="text-label-md font-label-md text-secondary uppercase tracking-widest font-semibold mb-0.5">
           Creative Engine
         </p>
-        <h1 className="text-headline-lg-mobile font-display text-primary font-semibold">Idea Studio</h1>
+        <h1 className="text-headline-lg-mobile font-display text-primary font-semibold">
+          Idea Studio
+        </h1>
         <p className="text-body-md text-on-surface-variant mt-1">
-          Get personalized, culturally appropriate ideas powered by AI. Pick a category and describe what you are
-          looking for.
+          Get personalized, culturally appropriate ideas powered by AI. Pick a category and describe
+          what you are looking for.
         </p>
       </header>
 
@@ -103,7 +105,9 @@ export default function StudioPage() {
                     className={`text-[24px] mb-2 block ${isSelected ? "text-secondary" : "text-on-surface-variant"}`}
                     filled={isSelected}
                   />
-                  <span className="font-title-md text-body-md font-semibold text-primary block">{cat.label}</span>
+                  <span className="font-title-md text-body-md font-semibold text-primary block">
+                    {cat.label}
+                  </span>
                 </button>
               </li>
             );
@@ -148,21 +152,36 @@ export default function StudioPage() {
       <p role="status" className="sr-only">
         {loading ? "Generating ideas…" : ""}
       </p>
-      <p role="alert" className={error ? "rounded-xl p-4 bg-error-container text-on-error-container text-body-md" : "sr-only"}>
+      <p
+        role="alert"
+        className={
+          error
+            ? "rounded-xl p-4 bg-error-container text-on-error-container text-body-md"
+            : "sr-only"
+        }
+      >
         {error}
       </p>
 
       {/* Persistent live region so newly generated ideas are announced. */}
       <div aria-live="polite">
         {ideas && (
-          <section aria-labelledby={resultsHeadingId} className="champagne-pill rounded-xl p-4 space-y-2">
+          <section
+            aria-labelledby={resultsHeadingId}
+            className="champagne-pill rounded-xl p-4 space-y-2"
+          >
             <div className="flex items-center gap-2 mb-2">
               <Icon name="auto_awesome" className="text-secondary" filled />
-              <h2 id={resultsHeadingId} className="font-title-md text-title-md text-primary font-semibold">
+              <h2
+                id={resultsHeadingId}
+                className="font-title-md text-title-md text-primary font-semibold"
+              >
                 AI-Generated Ideas
               </h2>
             </div>
-            <div className="text-body-md text-primary whitespace-pre-wrap leading-relaxed">{ideas}</div>
+            <div className="text-body-md text-primary whitespace-pre-wrap leading-relaxed">
+              {ideas}
+            </div>
           </section>
         )}
       </div>

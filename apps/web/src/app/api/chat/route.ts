@@ -8,7 +8,12 @@
  */
 
 import { NextResponse } from "next/server";
-import { GoogleGenerativeAI, type ChatSession, type Content, type Part } from "@google/generative-ai";
+import {
+  GoogleGenerativeAI,
+  type ChatSession,
+  type Content,
+  type Part,
+} from "@google/generative-ai";
 import { z } from "zod";
 import {
   collectTraceableFigures,
@@ -44,7 +49,7 @@ const MAX_MESSAGES = 30;
 const MAX_MESSAGE_CHARS = 4000;
 const MAX_TOOL_ROUNDS = 5;
 const MAX_RETRY_ROUNDS = 2;
-const MODEL_CALL_TIMEOUT_MS = 20_000;
+const MODEL_CALL_TIMEOUT_MS = 40_000;
 const TURN_DEADLINE_MS = 50_000;
 
 const ChatMessageSchema = z
@@ -59,7 +64,10 @@ const ChatMessageSchema = z
   .strict();
 
 const ChatRequestSchema = z.object({
-  messages: z.array(ChatMessageSchema).min(1).max(MAX_MESSAGES, `At most ${MAX_MESSAGES} messages per request`),
+  messages: z
+    .array(ChatMessageSchema)
+    .min(1)
+    .max(MAX_MESSAGES, `At most ${MAX_MESSAGES} messages per request`),
   brief: EventBriefSchema.optional(),
 });
 
@@ -67,7 +75,8 @@ type ChatMessage = z.infer<typeof ChatMessageSchema>;
 
 const POLICY_FALLBACK =
   "I can't help with that part, but I'd be glad to help with the rest of your celebration — venues, budget, timeline, rituals or ideas. What would you like to plan next?";
-const EMPTY_FALLBACK = "I couldn't complete that request. Could you rephrase it or share a little more detail about your event?";
+const EMPTY_FALLBACK =
+  "I couldn't complete that request. Could you rephrase it or share a little more detail about your event?";
 const FIGURE_NOTE =
   "I only quote amounts produced by the budget engine. Ask me to allocate your budget and I'll give you exact figures.";
 
@@ -79,16 +88,26 @@ class UpstreamTimeoutError extends Error {
 }
 
 /** `response` mirrors the message so the existing chat UI renders errors inline. */
-function errorResponse(status: number, code: string, message: string, headers?: HeadersInit): NextResponse {
+function errorResponse(
+  status: number,
+  code: string,
+  message: string,
+  headers?: HeadersInit
+): NextResponse {
   return NextResponse.json({ error: { code, message }, response: message }, { status, headers });
 }
 
 export async function POST(req: Request): Promise<NextResponse> {
   const limit = checkRateLimit(clientKey(req));
   if (!limit.allowed) {
-    return errorResponse(429, "rate_limited", "Too many requests. Please wait a minute and try again.", {
-      "Retry-After": String(limit.retryAfterSec),
-    });
+    return errorResponse(
+      429,
+      "rate_limited",
+      "Too many requests. Please wait a minute and try again.",
+      {
+        "Retry-After": String(limit.retryAfterSec),
+      }
+    );
   }
 
   if (Number(req.headers.get("content-length") ?? 0) > MAX_BODY_BYTES) {
@@ -110,7 +129,11 @@ export async function POST(req: Request): Promise<NextResponse> {
   if (!parsed.success) {
     const issue = parsed.error.issues[0];
     const where = issue?.path.join(".") || "body";
-    return errorResponse(400, "invalid_request", `${where}: ${issue?.message ?? "Invalid request"}`);
+    return errorResponse(
+      400,
+      "invalid_request",
+      `${where}: ${issue?.message ?? "Invalid request"}`
+    );
   }
 
   const { messages, brief } = parsed.data;
@@ -124,12 +147,20 @@ export async function POST(req: Request): Promise<NextResponse> {
       rules: preflight.events.filter((e) => e.verdict === "block").map((e) => e.detail ?? e.ruleId),
       excerpt: preflight.sanitizedForLog.slice(0, 120),
     });
-    return NextResponse.json({ response: preflight.blockReason, guardrailEvents: preflight.events, blocked: true });
+    return NextResponse.json({
+      response: preflight.blockReason,
+      guardrailEvents: preflight.events,
+      blocked: true,
+    });
   }
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    return errorResponse(503, "not_configured", "The AI concierge is not configured on this deployment.");
+    return errorResponse(
+      503,
+      "not_configured",
+      "The AI concierge is not configured on this deployment."
+    );
   }
 
   try {
@@ -144,11 +175,19 @@ export async function POST(req: Request): Promise<NextResponse> {
   } catch (error) {
     if (error instanceof UpstreamTimeoutError) {
       logger.warn("chat.upstream_timeout");
-      return errorResponse(504, "upstream_timeout", "The AI service took too long to respond. Please try again.");
+      return errorResponse(
+        504,
+        "upstream_timeout",
+        "The AI service took too long to respond. Please try again."
+      );
     }
     if (isTransientUpstreamError(error)) {
       logger.warn("chat.upstream_busy");
-      return errorResponse(503, "upstream_busy", "The AI service is busy right now. Please try again in a moment.");
+      return errorResponse(
+        503,
+        "upstream_busy",
+        "The AI service is busy right now. Please try again in a moment."
+      );
     }
     logger.error("chat.unhandled_error", {
       name: error instanceof Error ? error.name : "unknown",
@@ -181,14 +220,28 @@ async function runTurn(
   const userTexts = messages.filter((m) => m.role === "user").map((m) => m.content);
   const latest = messages[messages.length - 1]?.content ?? "";
 
-  const first = await runToolLoop(chat, [{ text: latest }], MAX_TOOL_ROUNDS, brief, deadline, events);
+  const first = await runToolLoop(
+    chat,
+    [{ text: latest }],
+    MAX_TOOL_ROUNDS,
+    brief,
+    deadline,
+    events
+  );
   const invocations = [...first.invocations];
   let text = first.text;
   let trace = traceFigures(text, invocations, userTexts);
   events.push(...trace.events);
 
   if (!trace.passed) {
-    const retry = await runToolLoop(chat, [{ text: correctionPrompt(trace) }], MAX_RETRY_ROUNDS, brief, deadline, events);
+    const retry = await runToolLoop(
+      chat,
+      [{ text: correctionPrompt(trace) }],
+      MAX_RETRY_ROUNDS,
+      brief,
+      deadline,
+      events
+    );
     invocations.push(...retry.invocations);
     if (retry.text.trim()) {
       text = retry.text;
@@ -215,12 +268,17 @@ async function runTurn(
   const policy = postflightPolicy(text);
   events.push(...policy.events);
   if (!policy.passed) {
-    logger.warn("chat.policy_block", { rules: policy.events.filter((e) => e.verdict === "block").map((e) => e.ruleId) });
+    logger.warn("chat.policy_block", {
+      rules: policy.events.filter((e) => e.verdict === "block").map((e) => e.ruleId),
+    });
     return { text: POLICY_FALLBACK, events, invocations };
   }
   if (policy.requiredNotes.length > 0) text = `${text}\n\n${policy.requiredNotes.join("\n")}`;
 
-  logger.info("chat.turn_complete", { tools: invocations.map((i) => i.name), events: events.length });
+  logger.info("chat.turn_complete", {
+    tools: invocations.map((i) => i.name),
+    events: events.length,
+  });
   return { text, events, invocations };
 }
 
@@ -246,7 +304,11 @@ async function runToolLoop(
     if (calls.length === 0) break;
 
     next = calls.map((call) => {
-      const toolResult = guardToolResult(call.name, executeTool(call.name, call.args, brief), events);
+      const toolResult = guardToolResult(
+        call.name,
+        executeTool(call.name, call.args, brief),
+        events
+      );
       invocations.push({ name: call.name, result: toolResult });
       return { functionResponse: { name: call.name, response: toolResult } };
     });
@@ -280,7 +342,11 @@ async function sendWithTimeout(chat: ChatSession, parts: Part[], deadline: numbe
       return await sendOnce(chat, parts, deadline);
     } catch (error) {
       const delay = RETRY_DELAYS_MS[attempt];
-      if (!isTransientUpstreamError(error) || delay === undefined || Date.now() + delay >= deadline) {
+      if (
+        !isTransientUpstreamError(error) ||
+        delay === undefined ||
+        Date.now() + delay >= deadline
+      ) {
         throw error;
       }
       logger.warn("chat.upstream_retry", { attempt: attempt + 1 });
@@ -314,7 +380,13 @@ function traceFigures(
   invocations: readonly ToolInvocation[],
   userTexts: readonly string[]
 ): TraceabilityResult {
-  return postflightTraceability(text, collectTraceableFigures(invocations.map((i) => i.result), userTexts));
+  return postflightTraceability(
+    text,
+    collectTraceableFigures(
+      invocations.map((i) => i.result),
+      userTexts
+    )
+  );
 }
 
 function correctionPrompt(trace: TraceabilityResult): string {
@@ -325,7 +397,11 @@ function correctionPrompt(trace: TraceabilityResult): string {
   );
 }
 
-function deterministicFallback(text: string, trace: TraceabilityResult, invocations: readonly ToolInvocation[]): string {
+function deterministicFallback(
+  text: string,
+  trace: TraceabilityResult,
+  invocations: readonly ToolInvocation[]
+): string {
   const plan = latestBudgetPlan(invocations);
   if (plan) return summarizeBudgetPlan(plan);
   return `${redactUntraceableFigures(text, trace.untraceable)}\n\n${FIGURE_NOTE}`;

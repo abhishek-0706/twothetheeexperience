@@ -124,7 +124,6 @@ const DEMO_ROS: RunOfShowItem[] = [
   },
 ];
 
-
 const MIN_DELAY = 1;
 const MAX_DELAY = 120;
 
@@ -204,7 +203,9 @@ export default function TimelinePage() {
     setCascadeResult(result);
     setAnnouncement(
       `Preview ready: ${moved} item${moved === 1 ? "" : "s"} would move, ` +
-        (violations > 0 ? `${violations} pinned-time violation${violations === 1 ? "" : "s"}.` : "no violations.")
+        (violations > 0
+          ? `${violations} pinned-time violation${violations === 1 ? "" : "s"}.`
+          : "no violations.")
     );
   }
 
@@ -224,7 +225,10 @@ export default function TimelinePage() {
     setItems((prev) =>
       prev.map((item) =>
         item.id === itemId
-          ? { ...item, checklist: item.checklist.map((c, i) => (i === index ? { ...c, done: !c.done } : c)) }
+          ? {
+              ...item,
+              checklist: item.checklist.map((c, i) => (i === index ? { ...c, done: !c.done } : c)),
+            }
           : item
       )
     );
@@ -302,7 +306,10 @@ export default function TimelinePage() {
               </p>
             </div>
             <div className="mt-0.5">
-              <h2 id="event-day-heading" className="text-headline-sm font-display text-primary font-semibold">
+              <h2
+                id="event-day-heading"
+                className="text-headline-sm font-display text-primary font-semibold"
+              >
                 <time dateTime="2027-02-14">Saturday, February 14</time> &bull; Rambagh Palace
               </h2>
               <p className="text-body-md font-body-md text-on-surface-variant flex items-center gap-1 mt-0.5">
@@ -312,18 +319,30 @@ export default function TimelinePage() {
             </div>
             <dl className="grid grid-cols-3 pt-space-xs mt-1 border-t border-surface-container-high text-center">
               <div>
-                <dt className="text-label-sm font-label-sm text-on-surface-variant">Total Guests</dt>
+                <dt className="text-label-sm font-label-sm text-on-surface-variant">
+                  Total Guests
+                </dt>
                 <dd className="text-title-md font-title-md text-primary font-bold">350</dd>
               </div>
               <div className="border-x border-surface-container-high">
-                <dt className="text-label-sm font-label-sm text-on-surface-variant">Vendors On Site</dt>
-                <dd className="text-title-md font-title-md text-primary font-bold">{vendorLeadSet.size} Active</dd>
+                <dt className="text-label-sm font-label-sm text-on-surface-variant">
+                  Vendors On Site
+                </dt>
+                <dd className="text-title-md font-title-md text-primary font-bold">
+                  {vendorLeadSet.size} Active
+                </dd>
               </div>
               <div>
-                <dt className="text-label-sm font-label-sm text-on-surface-variant">Schedule Pace</dt>
+                <dt className="text-label-sm font-label-sm text-on-surface-variant">
+                  Schedule Pace
+                </dt>
                 <dd
                   className={`text-title-md font-title-md font-bold ${
-                    pace === "On Time" ? "text-success" : pace === "—" ? "text-on-surface-variant" : "text-error"
+                    pace === "On Time"
+                      ? "text-success"
+                      : pace === "—"
+                        ? "text-on-surface-variant"
+                        : "text-error"
                   }`}
                 >
                   {pace}
@@ -333,7 +352,10 @@ export default function TimelinePage() {
           </section>
 
           {/* Delay cascade */}
-          <section aria-labelledby="orchestration-heading" className="champagne-pill rounded-xl p-space-md shadow-sm">
+          <section
+            aria-labelledby="orchestration-heading"
+            className="champagne-pill rounded-xl p-space-md shadow-sm"
+          >
             <div className="flex items-start gap-3">
               <div
                 aria-hidden="true"
@@ -343,10 +365,15 @@ export default function TimelinePage() {
               </div>
               <div className="flex-1">
                 <div className="flex items-center justify-between gap-2">
-                  <h2 id="orchestration-heading" className="text-label-md font-label-md font-bold text-primary">
+                  <h2
+                    id="orchestration-heading"
+                    className="text-label-md font-label-md font-bold text-primary"
+                  >
                     Emergency Day-Of Orchestration
                   </h2>
-                  <span className="text-label-sm font-label-sm text-secondary font-semibold">AI Copilot</span>
+                  <span className="text-label-sm font-label-sm text-secondary font-semibold">
+                    AI Copilot
+                  </span>
                 </div>
                 <p className="text-body-md font-body-md text-primary-container mt-1 font-medium">
                   Run-of-Show running behind?
@@ -355,7 +382,11 @@ export default function TimelinePage() {
                   Recalculate downstream vendor alerts, kitchen fire times &amp; musical transitions
                   {activeItem ? ` from “${activeItem.title}”` : ""}.
                 </p>
-                <form onSubmit={handleCascade} noValidate className="mt-3 flex flex-wrap items-center gap-2">
+                <form
+                  onSubmit={handleCascade}
+                  noValidate
+                  className="mt-3 flex flex-wrap items-center gap-2"
+                >
                   <button
                     ref={recalcButtonRef}
                     type="submit"
@@ -391,7 +422,11 @@ export default function TimelinePage() {
                     </span>
                   </div>
                   {delayError && (
-                    <p id={delayErrorId} role="alert" className="w-full text-label-sm text-error font-semibold">
+                    <p
+                      id={delayErrorId}
+                      role="alert"
+                      className="w-full text-label-sm text-error font-semibold"
+                    >
                       {delayError}
                     </p>
                   )}
@@ -420,7 +455,10 @@ export default function TimelinePage() {
                   {cascadeResult.shifted.map((s) => {
                     const item = cascadeResult.items.find((i) => i.id === s.itemId);
                     return (
-                      <li key={s.itemId} className="text-body-md text-primary flex flex-wrap items-center gap-x-2">
+                      <li
+                        key={s.itemId}
+                        className="text-body-md text-primary flex flex-wrap items-center gap-x-2"
+                      >
                         <Icon name="arrow_forward" className="text-[14px] text-secondary" />
                         <span className="font-medium">{item?.title ?? s.itemId}</span>
                         <span className="text-on-surface-variant">
@@ -486,7 +524,9 @@ export default function TimelinePage() {
               <h2 id="plan-heading" className="text-title-md font-title-md text-primary">
                 Day-Of Execution Plan
               </h2>
-              <span className="text-label-sm font-label-sm text-secondary font-medium">{items.length} Events</span>
+              <span className="text-label-sm font-label-sm text-secondary font-medium">
+                {items.length} Events
+              </span>
             </div>
 
             <ol className="relative pl-6 space-y-6 before:content-[''] before:absolute before:left-[11px] before:top-4 before:bottom-4 before:w-[2px] before:bg-surface-variant">
@@ -496,7 +536,11 @@ export default function TimelinePage() {
                 const endMin = item.startMin + item.durationMin;
 
                 return (
-                  <li key={item.id} className="relative" aria-current={isActive ? "step" : undefined}>
+                  <li
+                    key={item.id}
+                    className="relative"
+                    aria-current={isActive ? "step" : undefined}
+                  >
                     <div
                       aria-hidden="true"
                       className={`absolute -left-6 top-3 w-5 h-5 rounded-full flex items-center justify-center z-10 ${
@@ -509,7 +553,11 @@ export default function TimelinePage() {
                     >
                       <span
                         className={`w-1.5 h-1.5 rounded-full ${
-                          isCompleted ? "bg-success" : isActive ? "bg-primary-container" : "bg-outline"
+                          isCompleted
+                            ? "bg-success"
+                            : isActive
+                              ? "bg-primary-container"
+                              : "bg-outline"
                         }`}
                       />
                     </div>
@@ -556,7 +604,10 @@ export default function TimelinePage() {
                         )}
                       </div>
 
-                      <h3 id={`ros-${item.id}`} className="text-title-md font-title-md text-primary mt-1">
+                      <h3
+                        id={`ros-${item.id}`}
+                        className="text-title-md font-title-md text-primary mt-1"
+                      >
                         {item.title}
                       </h3>
 
@@ -593,7 +644,10 @@ export default function TimelinePage() {
                           >
                             Day-Of Checklist
                           </h4>
-                          <ul aria-labelledby={`checklist-${item.id}`} className="flex flex-col gap-1.5">
+                          <ul
+                            aria-labelledby={`checklist-${item.id}`}
+                            className="flex flex-col gap-1.5"
+                          >
                             {item.checklist.map((check, ci) => (
                               <li key={check.label}>
                                 <label className="flex items-center gap-2 min-h-[24px] cursor-pointer">
@@ -634,7 +688,10 @@ export default function TimelinePage() {
                 <Icon name="radio_button_checked" className="text-secondary text-[18px]" />
               </div>
               <div>
-                <h2 id="broadcast-heading" className="text-title-md font-title-md text-primary leading-tight">
+                <h2
+                  id="broadcast-heading"
+                  className="text-title-md font-title-md text-primary leading-tight"
+                >
                   Broadcast Vendor Whisper
                 </h2>
                 <p className="text-label-sm font-label-sm text-on-surface-variant">
@@ -659,14 +716,20 @@ export default function TimelinePage() {
       )}
 
       {view === "milestones" && (
-        <section aria-labelledby="milestones-heading" className="text-center py-12 text-on-surface-variant">
+        <section
+          aria-labelledby="milestones-heading"
+          className="text-center py-12 text-on-surface-variant"
+        >
           <Icon name="calendar_month" className="text-[48px] text-secondary/40 block mb-3" />
-          <h2 id="milestones-heading" className="font-headline-sm text-headline-sm text-primary mb-1">
+          <h2
+            id="milestones-heading"
+            className="font-headline-sm text-headline-sm text-primary mb-1"
+          >
             High-Level Milestones
           </h2>
           <p className="font-body-md text-body-md">
-            Switch to the Hub to see your full planning timeline, or use the Run-of-Show view for ceremony day
-            coordination.
+            Switch to the Hub to see your full planning timeline, or use the Run-of-Show view for
+            ceremony day coordination.
           </p>
         </section>
       )}

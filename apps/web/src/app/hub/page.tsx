@@ -118,7 +118,9 @@ export default function HubPage() {
   const urgentCount =
     nowMs === null
       ? 0
-      : tasks.filter((t) => t.status !== "done" && daysBetween(nowMs, t.dueDate) <= URGENT_WITHIN_DAYS).length;
+      : tasks.filter(
+          (t) => t.status !== "done" && daysBetween(nowMs, t.dueDate) <= URGENT_WITHIN_DAYS
+        ).length;
 
   function toggleTask(id: string) {
     setTasks((prev) =>
@@ -151,7 +153,11 @@ export default function HubPage() {
     setChatLoading(true);
 
     const fail = (message: string) => {
-      setChatMessages([...previous, { ...userMsg, isError: true }, { role: "assistant", content: message, isError: true }]);
+      setChatMessages([
+        ...previous,
+        { ...userMsg, isError: true },
+        { role: "assistant", content: message, isError: true },
+      ]);
       setChatAlert(message);
     };
 
@@ -171,11 +177,18 @@ export default function HubPage() {
         setChatMessages([
           ...previous,
           { ...userMsg, blocked: true },
-          { role: "assistant", content: data.response ?? "That message was blocked.", blocked: true },
+          {
+            role: "assistant",
+            content: data.response ?? "That message was blocked.",
+            blocked: true,
+          },
         ]);
         setChatAlert("Your message was blocked by a safety guardrail.");
       } else {
-        setChatMessages([...pending, { role: "assistant", content: data.response ?? "No response received." }]);
+        setChatMessages([
+          ...pending,
+          { role: "assistant", content: data.response ?? "No response received." },
+        ]);
       }
     } catch {
       fail("Could not reach the server. Please check your connection.");
@@ -231,8 +244,8 @@ export default function HubPage() {
                 <span className="text-on-success-container font-semibold">
                   {formatMoneyCompact(budget.perHead)} per guest
                 </span>
-                . {budget.lines.length} categories allocated with {(budget.contingencyPct * 100).toFixed(0)}%
-                contingency.
+                . {budget.lines.length} categories allocated with{" "}
+                {(budget.contingencyPct * 100).toFixed(0)}% contingency.
               </>
             ) : (
               "Loading your plan…"
@@ -276,11 +289,16 @@ export default function HubPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <Icon name="magic_button" className="text-secondary text-[18px]" filled />
-            <h2 id="concierge-heading" className="font-headline-sm text-[17px] text-primary font-semibold">
+            <h2
+              id="concierge-heading"
+              className="font-headline-sm text-[17px] text-primary font-semibold"
+            >
               AI Concierge
             </h2>
           </div>
-          <span className="font-label-sm text-label-sm text-secondary uppercase tracking-wider">Ask anything</span>
+          <span className="font-label-sm text-label-sm text-secondary uppercase tracking-wider">
+            Ask anything
+          </span>
         </div>
         <PromptPillRow
           label="Suggested questions"
@@ -295,7 +313,10 @@ export default function HubPage() {
       {/* Budget allocation */}
       {budget && (
         <section aria-labelledby="hub-budget-heading" className="space-y-3">
-          <h2 id="hub-budget-heading" className="font-headline-sm text-headline-sm text-primary font-semibold">
+          <h2
+            id="hub-budget-heading"
+            className="font-headline-sm text-headline-sm text-primary font-semibold"
+          >
             Budget Allocation
           </h2>
           <ul className="space-y-2">
@@ -307,7 +328,9 @@ export default function HubPage() {
                   className="bg-surface-container-lowest rounded-xl p-3 border border-outline-variant/20 shadow-sm"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-title-md text-body-md font-semibold text-primary">{line.label}</span>
+                    <span className="font-title-md text-body-md font-semibold text-primary">
+                      {line.label}
+                    </span>
                     <span className="font-title-md text-title-md text-primary">
                       {formatMoneyCompact(line.allocated)}
                     </span>
@@ -323,7 +346,9 @@ export default function HubPage() {
                     </summary>
                     <p className="mt-1 text-label-sm text-on-surface-variant">{line.rationale}</p>
                     {line.sourceCitation && (
-                      <p className="mt-0.5 text-[11px] text-on-surface-variant">Source: {line.sourceCitation}</p>
+                      <p className="mt-0.5 text-[11px] text-on-surface-variant">
+                        Source: {line.sourceCitation}
+                      </p>
                     )}
                   </details>
                 </li>
@@ -348,10 +373,15 @@ export default function HubPage() {
         <section aria-labelledby="focus-heading" className="space-y-3">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 id="focus-heading" className="font-headline-sm text-headline-sm text-primary font-semibold">
+              <h2
+                id="focus-heading"
+                className="font-headline-sm text-headline-sm text-primary font-semibold"
+              >
                 Active Focus
               </h2>
-              <p className="font-body-md text-label-sm text-on-surface-variant">Top priority tasks coming up</p>
+              <p className="font-body-md text-label-sm text-on-surface-variant">
+                Top priority tasks coming up
+              </p>
             </div>
             <button
               type="button"
@@ -406,8 +436,13 @@ export default function HubPage() {
                       {task.whyItMatters}
                     </p>
                     <div className="mt-2 flex items-center gap-3 text-label-sm font-label-sm text-on-surface-variant">
-                      <span className={`flex items-center gap-1 ${isUrgent && !isDone ? "text-error font-semibold" : ""}`}>
-                        <Icon name={isUrgent && !isDone ? "priority_high" : "event"} className="text-[14px]" />
+                      <span
+                        className={`flex items-center gap-1 ${isUrgent && !isDone ? "text-error font-semibold" : ""}`}
+                      >
+                        <Icon
+                          name={isUrgent && !isDone ? "priority_high" : "event"}
+                          className="text-[14px]"
+                        />
                         {isUrgent && !isDone ? (
                           <>
                             <span className="sr-only">Urgent: </span>
@@ -438,7 +473,10 @@ export default function HubPage() {
 
       {/* Conflicts */}
       {conflicts.length > 0 && (
-        <section aria-labelledby="conflicts-heading" className="bg-error-container rounded-xl p-4 border border-error/20">
+        <section
+          aria-labelledby="conflicts-heading"
+          className="bg-error-container rounded-xl p-4 border border-error/20"
+        >
           <h2
             id="conflicts-heading"
             className="font-title-md text-title-md text-on-error-container font-semibold flex items-center gap-2"
@@ -448,10 +486,18 @@ export default function HubPage() {
           </h2>
           <ul className="mt-2 space-y-1.5">
             {conflicts.map((c) => (
-              <li key={`${c.kind}-${c.message}`} className="text-body-md text-on-error-container flex items-start gap-2">
-                <Icon name={c.severity === "blocker" ? "block" : "error"} className="shrink-0 mt-0.5 text-[16px]" />
+              <li
+                key={`${c.kind}-${c.message}`}
+                className="text-body-md text-on-error-container flex items-start gap-2"
+              >
+                <Icon
+                  name={c.severity === "blocker" ? "block" : "error"}
+                  className="shrink-0 mt-0.5 text-[16px]"
+                />
                 <span>
-                  <span className="font-semibold">{c.severity === "blocker" ? "Blocker: " : "Warning: "}</span>
+                  <span className="font-semibold">
+                    {c.severity === "blocker" ? "Blocker: " : "Warning: "}
+                  </span>
                   {c.message}
                 </span>
               </li>
@@ -462,7 +508,10 @@ export default function HubPage() {
 
       {/* Guardrail log — visible for demo / judges */}
       {guardrailLog.length > 0 && (
-        <section aria-labelledby="guardrail-heading" className="bg-surface-container rounded-xl p-4 border border-outline-variant/30">
+        <section
+          aria-labelledby="guardrail-heading"
+          className="bg-surface-container rounded-xl p-4 border border-outline-variant/30"
+        >
           <h2
             id="guardrail-heading"
             className="font-title-md text-title-md text-primary font-semibold flex items-center gap-2 mb-2"
@@ -478,9 +527,19 @@ export default function HubPage() {
             {guardrailLog.map((ev, i) => (
               <li key={`${ev.ruleId}-${i}`} className="flex items-center gap-2">
                 <Icon
-                  name={ev.verdict === "pass" ? "check_circle" : ev.verdict === "flag" ? "flag" : "block"}
+                  name={
+                    ev.verdict === "pass"
+                      ? "check_circle"
+                      : ev.verdict === "flag"
+                        ? "flag"
+                        : "block"
+                  }
                   className={`text-[14px] ${
-                    ev.verdict === "pass" ? "text-success" : ev.verdict === "flag" ? "text-secondary" : "text-error"
+                    ev.verdict === "pass"
+                      ? "text-success"
+                      : ev.verdict === "flag"
+                        ? "text-secondary"
+                        : "text-error"
                   }`}
                 />
                 <span>
@@ -503,7 +562,10 @@ export default function HubPage() {
         <div className="flex items-center justify-between px-margin py-3 border-b border-outline-variant/30 bg-surface">
           <div className="flex items-center gap-2">
             <Icon name="auto_awesome" className="text-secondary" filled />
-            <h2 id={dialogTitleId} className="font-headline-sm text-headline-sm text-primary font-semibold">
+            <h2
+              id={dialogTitleId}
+              className="font-headline-sm text-headline-sm text-primary font-semibold"
+            >
               AI Concierge
             </h2>
           </div>
@@ -526,13 +588,22 @@ export default function HubPage() {
         >
           {chatMessages.length === 0 && (
             <div className="text-center py-12 text-on-surface-variant">
-              <Icon name="auto_awesome" className="text-[48px] text-secondary/40 block mb-3" filled />
+              <Icon
+                name="auto_awesome"
+                className="text-[48px] text-secondary/40 block mb-3"
+                filled
+              />
               <p className="font-headline-sm text-headline-sm text-primary mb-1">How can I help?</p>
-              <p className="font-body-md text-body-md">Ask me anything about your celebration planning.</p>
+              <p className="font-body-md text-body-md">
+                Ask me anything about your celebration planning.
+              </p>
             </div>
           )}
           {chatMessages.map((msg, i) => (
-            <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+            <div
+              key={i}
+              className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+            >
               <div
                 className={`max-w-[85%] rounded-2xl px-4 py-3 ${
                   msg.role === "user"
@@ -542,7 +613,9 @@ export default function HubPage() {
                       : "champagne-pill text-primary"
                 }`}
               >
-                <span className="sr-only">{msg.role === "user" ? "You said: " : "Concierge said: "}</span>
+                <span className="sr-only">
+                  {msg.role === "user" ? "You said: " : "Concierge said: "}
+                </span>
                 {msg.role === "assistant" && (msg.blocked || msg.isError) && (
                   <p className="flex items-center gap-1 text-label-sm font-semibold mb-1">
                     <Icon name={msg.blocked ? "shield" : "error"} className="text-[14px]" />
@@ -550,7 +623,11 @@ export default function HubPage() {
                   </p>
                 )}
                 {msg.role === "assistant" && !msg.blocked && !msg.isError && (
-                  <Icon name="auto_awesome" className="text-secondary text-[14px] mb-1 block" filled />
+                  <Icon
+                    name="auto_awesome"
+                    className="text-secondary text-[14px] mb-1 block"
+                    filled
+                  />
                 )}
                 <p className="font-body-md text-body-md whitespace-pre-wrap">{msg.content}</p>
               </div>
@@ -573,7 +650,10 @@ export default function HubPage() {
           {chatAlert}
         </p>
 
-        <form onSubmit={sendChat} className="px-margin py-3 border-t border-outline-variant/30 bg-surface">
+        <form
+          onSubmit={sendChat}
+          className="px-margin py-3 border-t border-outline-variant/30 bg-surface"
+        >
           <label htmlFor={chatInputId} className="sr-only">
             Message the AI Concierge
           </label>

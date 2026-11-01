@@ -40,7 +40,11 @@ export function checkRateLimit(key: string, now: number = Date.now()): RateLimit
   }
 
   if (bucket.count >= RATE_LIMIT_MAX_REQUESTS) {
-    return { allowed: false, remaining: 0, retryAfterSec: Math.ceil((bucket.resetAt - now) / 1000) };
+    return {
+      allowed: false,
+      remaining: 0,
+      retryAfterSec: Math.ceil((bucket.resetAt - now) / 1000),
+    };
   }
 
   bucket.count += 1;

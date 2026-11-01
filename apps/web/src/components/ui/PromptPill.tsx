@@ -16,7 +16,9 @@ export function PromptPill({ label, icon, onClick }: PromptPillProps) {
       <span className="w-6 h-6 rounded-full bg-secondary-fixed/40 flex items-center justify-center text-secondary">
         <Icon name={icon} className="text-[14px]" />
       </span>
-      <span className="font-label-md text-label-md text-primary font-medium whitespace-nowrap">{label}</span>
+      <span className="font-label-md text-label-md text-primary font-medium whitespace-nowrap">
+        {label}
+      </span>
     </button>
   );
 }
@@ -28,7 +30,10 @@ interface PromptPillRowProps {
 
 export default function PromptPillRow({ label, pills }: PromptPillRowProps) {
   return (
-    <ul aria-label={label} className="flex overflow-x-auto pb-1 gap-2 custom-scroll -mx-margin px-margin">
+    <ul
+      aria-label={label}
+      className="flex overflow-x-auto pb-1 gap-2 custom-scroll -mx-margin px-margin"
+    >
       {pills.map((pill) => (
         <li key={pill.label} className="shrink-0">
           <PromptPill {...pill} />

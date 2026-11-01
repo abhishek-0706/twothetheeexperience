@@ -22,16 +22,23 @@ export default function BudgetPage() {
   }, []);
 
   const linesSum = budget ? budget.lines.reduce((acc, l) => acc + l.allocated.amountMinor, 0) : 0;
-  const diff = budget ? Math.abs(budget.total.amountMinor - (linesSum + budget.contingency.amountMinor)) : 0;
+  const diff = budget
+    ? Math.abs(budget.total.amountMinor - (linesSum + budget.contingency.amountMinor))
+    : 0;
   const invariantsPass = diff <= SUM_TOLERANCE_MINOR;
 
   return (
-    <main className="pt-20 px-margin max-w-md mx-auto flex flex-col gap-space-lg pb-36" aria-busy={!budget}>
+    <main
+      className="pt-20 px-margin max-w-md mx-auto flex flex-col gap-space-lg pb-36"
+      aria-busy={!budget}
+    >
       <header className="pt-2">
         <p className="text-label-md font-label-md text-secondary uppercase tracking-widest font-semibold mb-0.5">
           Financial Planning
         </p>
-        <h1 className="text-headline-lg-mobile font-display text-primary font-semibold">Budget Breakdown</h1>
+        <h1 className="text-headline-lg-mobile font-display text-primary font-semibold">
+          Budget Breakdown
+        </h1>
       </header>
 
       <p role="status" className="sr-only">
@@ -62,19 +69,25 @@ export default function BudgetPage() {
             />
             <dl className="grid grid-cols-3 gap-4 text-center">
               <div>
-                <dt className="text-label-sm font-label-sm text-on-surface-variant uppercase">Total Budget</dt>
+                <dt className="text-label-sm font-label-sm text-on-surface-variant uppercase">
+                  Total Budget
+                </dt>
                 <dd className="text-headline-md font-display text-primary font-semibold mt-1">
                   {formatMoneyCompact(budget.total)}
                 </dd>
               </div>
               <div className="border-x border-surface-container-high">
-                <dt className="text-label-sm font-label-sm text-on-surface-variant uppercase">Per Guest</dt>
+                <dt className="text-label-sm font-label-sm text-on-surface-variant uppercase">
+                  Per Guest
+                </dt>
                 <dd className="text-headline-md font-display text-primary font-semibold mt-1">
                   {formatMoneyCompact(budget.perHead)}
                 </dd>
               </div>
               <div>
-                <dt className="text-label-sm font-label-sm text-on-surface-variant uppercase">Contingency</dt>
+                <dt className="text-label-sm font-label-sm text-on-surface-variant uppercase">
+                  Contingency
+                </dt>
                 <dd className="text-headline-md font-display text-on-success-container font-semibold mt-1">
                   {(budget.contingencyPct * 100).toFixed(0)}%
                 </dd>
@@ -95,7 +108,10 @@ export default function BudgetPage() {
                 aria-controls="budget-lines"
                 className="min-h-[44px] px-2 text-label-md font-label-md text-secondary font-semibold flex items-center gap-1 hover:underline"
               >
-                <Icon name={showSources ? "visibility_off" : "visibility"} className="text-[14px]" />
+                <Icon
+                  name={showSources ? "visibility_off" : "visibility"}
+                  className="text-[14px]"
+                />
                 {showSources ? "Hide sources" : "Show the math"}
               </button>
             </div>
@@ -109,7 +125,9 @@ export default function BudgetPage() {
                     className="bg-surface-container-lowest rounded-xl p-4 border border-outline-variant/20 shadow-sm"
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <h3 className="font-title-md text-body-lg font-semibold text-primary">{line.label}</h3>
+                      <h3 className="font-title-md text-body-lg font-semibold text-primary">
+                        {line.label}
+                      </h3>
                       <p className="text-right">
                         <span className="font-title-md text-title-md text-primary block">
                           {formatMoneyCompact(line.allocated)}
@@ -161,8 +179,8 @@ export default function BudgetPage() {
                   </span>
                 </div>
                 <p className="text-body-md text-on-accent-container mt-1">
-                  {(budget.contingencyPct * 100).toFixed(0)}% buffer for unexpected costs — venue damage deposits,
-                  last-minute additions, weather contingencies.
+                  {(budget.contingencyPct * 100).toFixed(0)}% buffer for unexpected costs — venue
+                  damage deposits, last-minute additions, weather contingencies.
                 </p>
               </li>
             </ul>
@@ -201,7 +219,10 @@ export default function BudgetPage() {
                 All invariants pass
               </p>
             ) : (
-              <p role="alert" className="text-error font-semibold mt-2 flex items-center gap-1 text-label-sm">
+              <p
+                role="alert"
+                className="text-error font-semibold mt-2 flex items-center gap-1 text-label-sm"
+              >
                 <Icon name="error" className="text-[14px]" />
                 Invariant failed: lines plus contingency do not equal the total
               </p>
@@ -210,7 +231,10 @@ export default function BudgetPage() {
 
           {budget.assumptions.length > 0 && (
             <section aria-labelledby="assumptions-heading" className="space-y-2">
-              <h2 id="assumptions-heading" className="font-title-md text-title-md text-primary font-semibold">
+              <h2
+                id="assumptions-heading"
+                className="font-title-md text-title-md text-primary font-semibold"
+              >
                 Assumptions
               </h2>
               <ul className="list-disc list-inside space-y-1 text-body-md text-on-surface-variant">

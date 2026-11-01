@@ -75,7 +75,10 @@ const PII_PATTERNS: ReadonlyArray<{ pattern: RegExp; replacement: string }> = [
 
 /** Redact PII before anything is logged. The model still receives the original text. */
 export function redactPII(text: string): string {
-  return PII_PATTERNS.reduce((acc, { pattern, replacement }) => acc.replace(pattern, replacement), text);
+  return PII_PATTERNS.reduce(
+    (acc, { pattern, replacement }) => acc.replace(pattern, replacement),
+    text
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -94,19 +97,26 @@ const INJECTION_RULES: ReadonlyArray<{ id: string; pattern: RegExp }> = [
   },
   {
     id: "forget-context",
-    pattern: /\bforget\s+(?:everything|all)\s+(?:above|before|previous|prior|you\s+(?:were|have\s+been)\s+told)\b/i,
+    pattern:
+      /\bforget\s+(?:everything|all)\s+(?:above|before|previous|prior|you\s+(?:were|have\s+been)\s+told)\b/i,
   },
   { id: "role-prefix", pattern: /(?:^|\n)\s*(?:#{1,6}\s*)?\[?\s*(?:system|developer)\s*\]?\s*:/i },
   {
     id: "role-tag",
-    pattern: /<\s*\/?\s*(?:system|developer|assistant|instructions?)\s*>|<\|im_(?:start|end)\|>|\[\/?INST\]/i,
+    pattern:
+      /<\s*\/?\s*(?:system|developer|assistant|instructions?)\s*>|<\|im_(?:start|end)\|>|\[\/?INST\]/i,
   },
   { id: "prompt-exfiltration", pattern: /\b(?:system|hidden)\s+(?:prompt|instructions)\b/i },
   {
     id: "prompt-exfiltration",
-    pattern: /\b(?:reveal|show|print|repeat|display|leak|dump|output)\b[^.!?\n]{0,30}\byour\s+(?:instructions|prompt|configuration|rules)\b/i,
+    pattern:
+      /\b(?:reveal|show|print|repeat|display|leak|dump|output)\b[^.!?\n]{0,30}\byour\s+(?:instructions|prompt|configuration|rules)\b/i,
   },
-  { id: "secret-exfiltration", pattern: /\b(?:api[\s_-]?keys?|secret[\s_-]?keys?|access[\s_-]?tokens?|env(?:ironment)?\s+variables?)\b/i },
+  {
+    id: "secret-exfiltration",
+    pattern:
+      /\b(?:api[\s_-]?keys?|secret[\s_-]?keys?|access[\s_-]?tokens?|env(?:ironment)?\s+variables?)\b/i,
+  },
   {
     id: "persona-override",
     pattern:
@@ -114,7 +124,8 @@ const INJECTION_RULES: ReadonlyArray<{ id: string; pattern: RegExp }> = [
   },
   {
     id: "persona-override",
-    pattern: /\bfrom\s+now\s+on,?\s+you\s+(?:are|will|must)\s+(?:an?\s+)?(?:unrestricted|unfiltered|ignore|no\s+longer)/i,
+    pattern:
+      /\bfrom\s+now\s+on,?\s+you\s+(?:are|will|must)\s+(?:an?\s+)?(?:unrestricted|unfiltered|ignore|no\s+longer)/i,
   },
   {
     id: "persona-override",
@@ -123,9 +134,13 @@ const INJECTION_RULES: ReadonlyArray<{ id: string; pattern: RegExp }> = [
   },
   {
     id: "persona-override",
-    pattern: /\b(?:pretend|act\s+as|you\s+are)\b[^.!?\n]{0,20}\b(?:different|another|unrestricted|unfiltered|jailbroken)\s+(?:ai|model|assistant|chatbot)\b/i,
+    pattern:
+      /\b(?:pretend|act\s+as|you\s+are)\b[^.!?\n]{0,20}\b(?:different|another|unrestricted|unfiltered|jailbroken)\s+(?:ai|model|assistant|chatbot)\b/i,
   },
-  { id: "jailbreak", pattern: /\bjail\s?(?:break|broke|broken|breaking)\b|\bdo\s+anything\s+now\b|\bDAN\s+mode\b/i },
+  {
+    id: "jailbreak",
+    pattern: /\bjail\s?(?:break|broke|broken|breaking)\b|\bdo\s+anything\s+now\b|\bDAN\s+mode\b/i,
+  },
   { id: "privileged-mode", pattern: /\b(?:developer|debug|god|sudo)\s+mode\b/i },
 ];
 
@@ -155,28 +170,35 @@ const POLICY_RULES: readonly PolicyRule[] = [
   },
   {
     id: "no-guarantee",
-    pattern: /\bguarantee[ds]?\b[^.!?\n]{0,30}\b(?:availability|available|prices?|pricing|rates?|quality|bookings?)\b/i,
+    pattern:
+      /\bguarantee[ds]?\b[^.!?\n]{0,30}\b(?:availability|available|prices?|pricing|rates?|quality|bookings?)\b/i,
     message: "Cannot guarantee vendor availability, pricing or quality.",
-    guidance: "Do not promise vendor availability, price or quality; say these must be confirmed with the vendor in writing.",
+    guidance:
+      "Do not promise vendor availability, price or quality; say these must be confirmed with the vendor in writing.",
   },
   {
     id: "no-caste-filter",
     pattern:
       /\b(?:upper|lower|same|high|low)[-\s]?caste\b|\bcaste\b[^.!?\n]{0,40}\b(?:filter|rank|only|prefer|exclude|match|based)\b|\b(?:filter|rank|exclude|sort)\b[^.!?\n]{0,40}\bcaste\b/i,
     message: "Caste-based filtering or ranking is not permitted.",
-    guidance: "Do not filter, rank or recommend vendors, guests or partners by caste. Offer criteria based on budget, style, reviews or location instead.",
+    guidance:
+      "Do not filter, rank or recommend vendors, guests or partners by caste. Offer criteria based on budget, style, reviews or location instead.",
   },
   {
     id: "no-fairness",
-    pattern: /\b(?:fair(?:ness)?\s+cream|skin\s+(?:whitening|lightening|brightening)|look\s+fairer|become\s+fair(?:er)?)\b/i,
+    pattern:
+      /\b(?:fair(?:ness)?\s+cream|skin\s+(?:whitening|lightening|brightening)|look\s+fairer|become\s+fair(?:er)?)\b/i,
     message: "Skin-tone-based beauty advice is not provided.",
-    guidance: "Do not give skin-lightening or fairness advice. Offer general skincare-routine and makeup-trial planning without reference to skin tone.",
+    guidance:
+      "Do not give skin-lightening or fairness advice. Offer general skincare-routine and makeup-trial planning without reference to skin tone.",
   },
   {
     id: "no-weight-advice",
-    pattern: /\bcrash\s+diet\b|\blose\s+(?:\d+\s*(?:kg|kgs|kilos?|pounds|lbs)|weight)\s+(?:fast|quickly|before|for)\b/i,
+    pattern:
+      /\bcrash\s+diet\b|\blose\s+(?:\d+\s*(?:kg|kgs|kilos?|pounds|lbs)|weight)\s+(?:fast|quickly|before|for)\b/i,
     message: "Body or weight advice is not provided. Please consult a healthcare professional.",
-    guidance: "Do not give diet or weight-loss advice. Kindly suggest a doctor or registered dietitian and offer help with outfit fittings and timelines instead.",
+    guidance:
+      "Do not give diet or weight-loss advice. Kindly suggest a doctor or registered dietitian and offer help with outfit fittings and timelines instead.",
   },
 ];
 
@@ -187,18 +209,33 @@ const REFUSAL_CUE =
 const SAFETY_DOMAINS: ReadonlyArray<{ pattern: RegExp; domain: string }> = [
   { pattern: /\b(?:fireworks?|pyrotechnics?|firecrackers?)\b/i, domain: "fireworks" },
   { pattern: /\b(?:drones?|uav)\b/i, domain: "drones" },
-  { pattern: /\b(?:liquor\s+licen[cs]e|alcohol\s+permit|bar\s+licen[cs]e)\b/i, domain: "alcohol-permits" },
-  { pattern: /\b(?:fire\s+exits?|crowd\s+capacity|stampede|fire\s+safety)\b/i, domain: "crowd-safety" },
+  {
+    pattern: /\b(?:liquor\s+licen[cs]e|alcohol\s+permit|bar\s+licen[cs]e)\b/i,
+    domain: "alcohol-permits",
+  },
+  {
+    pattern: /\b(?:fire\s+exits?|crowd\s+capacity|stampede|fire\s+safety)\b/i,
+    domain: "crowd-safety",
+  },
 ];
 
-const VERIFY_NOTE = "Please verify with your local municipal authority or a licensed vendor before finalising.";
+const VERIFY_NOTE =
+  "Please verify with your local municipal authority or a licensed vendor before finalising.";
 const VERIFY_CUE = /\bverify\b|\bcheck\s+with\b|\bconfirm\s+with\b/i;
-const AUTHORITY_CUE = /\b(?:municipal|local\s+authorit|police|fire\s+department|licen[cs]ed|licen[cs]ing|permit\s+office)/i;
+const AUTHORITY_CUE =
+  /\b(?:municipal|local\s+authorit|police|fire\s+department|licen[cs]ed|licen[cs]ing|permit\s+office)/i;
 
 const OFF_TOPIC_SIGNALS: ReadonlyArray<{ pattern: RegExp; topic: string }> = [
-  { pattern: /\b(?:stocks?|crypto(?:currency)?|bitcoin|stock\s+market|mutual\s+funds?|day\s+trading)\b/i, topic: "investments" },
+  {
+    pattern:
+      /\b(?:stocks?|crypto(?:currency)?|bitcoin|stock\s+market|mutual\s+funds?|day\s+trading)\b/i,
+    topic: "investments",
+  },
   { pattern: /\b(?:diagnos\w*|prescri\w*|symptoms?|medication|dosage)\b/i, topic: "medical" },
-  { pattern: /\b(?:lawsuit|legal\s+advice|sue\s+(?:them|him|her|the)|court\s+case)\b/i, topic: "legal" },
+  {
+    pattern: /\b(?:lawsuit|legal\s+advice|sue\s+(?:them|him|her|the)|court\s+case)\b/i,
+    topic: "legal",
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -221,15 +258,30 @@ export function preflightCheck(userMessage: string): PreflightResult {
   const injStart = Date.now();
   const injectionRule = detectInjection(userMessage);
   if (injectionRule) {
-    events.push({ ruleId: "injection-scan", verdict: "block", detail: `rule: ${injectionRule}`, latencyMs: Date.now() - injStart });
-    return { allowed: false, sanitizedForLog: sanitized, events, blockReason: INJECTION_BLOCK_REASON, modelGuidance };
+    events.push({
+      ruleId: "injection-scan",
+      verdict: "block",
+      detail: `rule: ${injectionRule}`,
+      latencyMs: Date.now() - injStart,
+    });
+    return {
+      allowed: false,
+      sanitizedForLog: sanitized,
+      events,
+      blockReason: INJECTION_BLOCK_REASON,
+      modelGuidance,
+    };
   }
   events.push({ ruleId: "injection-scan", verdict: "pass", latencyMs: Date.now() - injStart });
 
   const policyStart = Date.now();
   const policyHits = POLICY_RULES.filter((rule) => rule.pattern.test(userMessage));
   for (const rule of policyHits) {
-    events.push({ ruleId: `policy-input:${rule.id}`, verdict: "flag", latencyMs: Date.now() - policyStart });
+    events.push({
+      ruleId: `policy-input:${rule.id}`,
+      verdict: "flag",
+      latencyMs: Date.now() - policyStart,
+    });
     modelGuidance.push(rule.guidance);
   }
   if (policyHits.length === 0) {
@@ -239,7 +291,12 @@ export function preflightCheck(userMessage: string): PreflightResult {
   const scopeStart = Date.now();
   const offTopic = OFF_TOPIC_SIGNALS.find((signal) => signal.pattern.test(userMessage));
   if (offTopic) {
-    events.push({ ruleId: "scope-router", verdict: "flag", detail: `topic: ${offTopic.topic}`, latencyMs: Date.now() - scopeStart });
+    events.push({
+      ruleId: "scope-router",
+      verdict: "flag",
+      detail: `topic: ${offTopic.topic}`,
+      latencyMs: Date.now() - scopeStart,
+    });
     modelGuidance.push(
       `The user raised a ${offTopic.topic} question, which is outside celebration planning. Give brief general orientation only, recommend a qualified professional, and steer back to the event.`
     );
@@ -272,7 +329,11 @@ export function preflightConversation(messages: readonly ConversationMessage[]):
       return { ...result, allowed: false, blockReason: HISTORY_BLOCK_REASON, modelGuidance: [] };
     }
   }
-  result.events.push({ ruleId: "history-injection-scan", verdict: "pass", latencyMs: Date.now() - start });
+  result.events.push({
+    ruleId: "history-injection-scan",
+    verdict: "pass",
+    latencyMs: Date.now() - start,
+  });
   return result;
 }
 
@@ -288,7 +349,9 @@ export function postflightBudget(candidate: unknown): PostflightResult {
 
   const parsed = BudgetPlanSchema.safeParse(candidate);
   if (!parsed.success) {
-    violations.push(`Schema validation failed: ${parsed.error.issues[0]?.message ?? "invalid plan"}`);
+    violations.push(
+      `Schema validation failed: ${parsed.error.issues[0]?.message ?? "invalid plan"}`
+    );
     events.push({ ruleId: "budget-schema", verdict: "block", latencyMs: Date.now() - start });
     return { passed: false, events, violations };
   }
@@ -302,17 +365,34 @@ export function postflightBudget(candidate: unknown): PostflightResult {
     violations.push(
       `Budget sum invariant failed: lines(${linesSum}) + contingency(${plan.contingency.amountMinor}) ≠ total(${plan.total.amountMinor}), diff=${diff}`
     );
-    events.push({ ruleId: "budget-sum-invariant", verdict: "block", detail: `diff=${diff}`, latencyMs: Date.now() - sumStart });
+    events.push({
+      ruleId: "budget-sum-invariant",
+      verdict: "block",
+      detail: `diff=${diff}`,
+      latencyMs: Date.now() - sumStart,
+    });
   } else {
-    events.push({ ruleId: "budget-sum-invariant", verdict: "pass", latencyMs: Date.now() - sumStart });
+    events.push({
+      ruleId: "budget-sum-invariant",
+      verdict: "pass",
+      latencyMs: Date.now() - sumStart,
+    });
   }
 
   const contStart = Date.now();
   if (plan.contingencyPct < 0.05) {
     violations.push(`Contingency too low: ${(plan.contingencyPct * 100).toFixed(1)}% < 5%`);
-    events.push({ ruleId: "budget-contingency-min", verdict: "block", latencyMs: Date.now() - contStart });
+    events.push({
+      ruleId: "budget-contingency-min",
+      verdict: "block",
+      latencyMs: Date.now() - contStart,
+    });
   } else {
-    events.push({ ruleId: "budget-contingency-min", verdict: "pass", latencyMs: Date.now() - contStart });
+    events.push({
+      ruleId: "budget-contingency-min",
+      verdict: "pass",
+      latencyMs: Date.now() - contStart,
+    });
   }
 
   const citeStart = Date.now();
@@ -360,7 +440,9 @@ export function postflightPolicy(text: string): PolicyResult {
     events.push({
       ruleId: `safety-${domain}`,
       verdict: "flag",
-      detail: hasVerifyNote ? "verify-with-authority note present" : "verify-with-authority note appended",
+      detail: hasVerifyNote
+        ? "verify-with-authority note present"
+        : "verify-with-authority note appended",
       latencyMs: Date.now() - start,
     });
     if (!hasVerifyNote && !requiredNotes.includes(VERIFY_NOTE)) requiredNotes.push(VERIFY_NOTE);
@@ -407,7 +489,12 @@ export function extractCurrencyFigures(text: string): CurrencyFigure[] {
     const tolerance = multiplier > 1 ? 0.5 * 10 ** -decimals * multiplier + 1 : 1;
 
     const leading = match[0].length - match[0].trimStart().length;
-    figures.push({ raw: match[0].trim(), index: (match.index ?? 0) + leading, rupees: value * multiplier, tolerance });
+    figures.push({
+      raw: match[0].trim(),
+      index: (match.index ?? 0) + leading,
+      rupees: value * multiplier,
+      tolerance,
+    });
   }
   return figures;
 }
@@ -416,7 +503,10 @@ export function extractCurrencyFigures(text: string): CurrencyFigure[] {
  * Every rupee amount a reply may quote this turn: Money values and quoted figures from tool
  * results, plus figures the user stated themselves (echoing them is not invention).
  */
-export function collectTraceableFigures(toolResults: readonly unknown[], userTexts: readonly string[]): number[] {
+export function collectTraceableFigures(
+  toolResults: readonly unknown[],
+  userTexts: readonly string[]
+): number[] {
   const allowed: number[] = [];
 
   const visit = (value: unknown): void => {
@@ -445,7 +535,10 @@ export function collectTraceableFigures(toolResults: readonly unknown[], userTex
 }
 
 /** Fail the turn if any currency figure in the reply does not trace to an allowed value. */
-export function postflightTraceability(modelText: string, allowedRupees: Iterable<number>): TraceabilityResult {
+export function postflightTraceability(
+  modelText: string,
+  allowedRupees: Iterable<number>
+): TraceabilityResult {
   const start = Date.now();
   const allowed = [...allowedRupees];
   const untraceable = extractCurrencyFigures(modelText).filter(
@@ -468,12 +561,17 @@ export function postflightTraceability(modelText: string, allowedRupees: Iterabl
 }
 
 /** Replace untraceable figures in place so no invented amount reaches the user. */
-export function redactUntraceableFigures(text: string, untraceable: readonly CurrencyFigure[]): string {
+export function redactUntraceableFigures(
+  text: string,
+  untraceable: readonly CurrencyFigure[]
+): string {
   return [...untraceable]
     .sort((a, b) => b.index - a.index)
     .reduce(
       (acc, figure) =>
-        acc.slice(0, figure.index) + "[estimate withheld]" + acc.slice(figure.index + figure.raw.length),
+        acc.slice(0, figure.index) +
+        "[estimate withheld]" +
+        acc.slice(figure.index + figure.raw.length),
       text
     );
 }

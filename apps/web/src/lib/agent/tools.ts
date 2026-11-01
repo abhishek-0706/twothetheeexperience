@@ -30,15 +30,27 @@ export interface ToolInvocation {
 }
 
 const BRIEF_PROPERTIES = {
-  eventFamily: { type: SchemaType.STRING, description: "One of: wedding, birthday_milestone, community" },
-  eventSubtype: { type: SchemaType.STRING, description: "E.g. Punjabi wedding, 1st birthday, Durga Puja" },
+  eventFamily: {
+    type: SchemaType.STRING,
+    description: "One of: wedding, birthday_milestone, community",
+  },
+  eventSubtype: {
+    type: SchemaType.STRING,
+    description: "E.g. Punjabi wedding, 1st birthday, Durga Puja",
+  },
   eventDate: { type: SchemaType.STRING, description: "YYYY-MM-DD" },
   city: { type: SchemaType.STRING, description: "City name" },
   cityTier: { type: SchemaType.STRING, description: "One of: metro, tier1, tier2, destination" },
   guestCount: { type: SchemaType.INTEGER, description: "Number of guests" },
-  budgetAmountMinor: { type: SchemaType.INTEGER, description: "Total budget in paise (₹1 = 100 paise)" },
+  budgetAmountMinor: {
+    type: SchemaType.INTEGER,
+    description: "Total budget in paise (₹1 = 100 paise)",
+  },
   currency: { type: SchemaType.STRING, description: "ISO currency code, e.g. INR" },
-  communities: { type: SchemaType.STRING, description: "Comma-separated communities the user declared" },
+  communities: {
+    type: SchemaType.STRING,
+    description: "Comma-separated communities the user declared",
+  },
   dietary: { type: SchemaType.STRING, description: "Comma-separated dietary requirements" },
 } as const;
 
@@ -61,7 +73,8 @@ export const TOOL_DECLARATIONS: FunctionDeclaration[] = [
   },
   {
     name: "generate_timeline",
-    description: "Reverse-planned task timeline from the event date, sorted by due date. NEVER calculate dates yourself.",
+    description:
+      "Reverse-planned task timeline from the event date, sorted by due date. NEVER calculate dates yourself.",
     parameters: {
       type: SchemaType.OBJECT,
       properties: BRIEF_PROPERTIES,
@@ -70,7 +83,8 @@ export const TOOL_DECLARATIONS: FunctionDeclaration[] = [
   },
   {
     name: "detect_conflicts",
-    description: "Check the plan for budget overallocation, unrealistic per-head costs, past dates, short lead times and dependency cycles.",
+    description:
+      "Check the plan for budget overallocation, unrealistic per-head costs, past dates, short lead times and dependency cycles.",
     parameters: {
       type: SchemaType.OBJECT,
       properties: BRIEF_PROPERTIES,
@@ -79,12 +93,19 @@ export const TOOL_DECLARATIONS: FunctionDeclaration[] = [
   },
   {
     name: "generate_ideas",
-    description: "Frame a request for creative ideas: themes, decor, menu, entertainment, favours, invite copy or playlists.",
+    description:
+      "Frame a request for creative ideas: themes, decor, menu, entertainment, favours, invite copy or playlists.",
     parameters: {
       type: SchemaType.OBJECT,
       properties: {
-        category: { type: SchemaType.STRING, description: "theme, decor, menu, entertainment, favors, invite_copy or playlist" },
-        context: { type: SchemaType.STRING, description: "What the user wants ideas for, with constraints" },
+        category: {
+          type: SchemaType.STRING,
+          description: "theme, decor, menu, entertainment, favors, invite_copy or playlist",
+        },
+        context: {
+          type: SchemaType.STRING,
+          description: "What the user wants ideas for, with constraints",
+        },
       },
       required: ["category", "context"],
     },
@@ -94,7 +115,12 @@ export const TOOL_DECLARATIONS: FunctionDeclaration[] = [
 const csvList = z
   .string()
   .max(300)
-  .transform((value) => value.split(",").map((item) => item.trim()).filter(Boolean));
+  .transform((value) =>
+    value
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean)
+  );
 
 const lowerCased = (schema: z.ZodTypeAny) =>
   z.preprocess((value) => (typeof value === "string" ? value.trim().toLowerCase() : value), schema);
@@ -102,7 +128,10 @@ const lowerCased = (schema: z.ZodTypeAny) =>
 const BriefArgsSchema = z.object({
   eventFamily: lowerCased(EventFamily).optional(),
   eventSubtype: z.string().trim().min(1).max(100).optional(),
-  eventDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "eventDate must be YYYY-MM-DD").optional(),
+  eventDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "eventDate must be YYYY-MM-DD")
+    .optional(),
   city: z.string().trim().min(1).max(80).optional(),
   cityTier: lowerCased(z.enum(["metro", "tier1", "tier2", "destination"])).optional(),
   guestCount: z.number().int().positive().max(100_000).optional(),
@@ -145,12 +174,22 @@ function resolveBrief(args: BriefArgs, existing: EventBrief | undefined): BriefR
 
   const missing = REQUIRED_BRIEF_FIELDS.filter((field) => candidate[field] === undefined);
   if (missing.length > 0) {
-    return { ok: false, result: { status: "needs_info", missing, message: "Ask the user for the missing details." } };
+    return {
+      ok: false,
+      result: { status: "needs_info", missing, message: "Ask the user for the missing details." },
+    };
   }
 
   const parsed = EventBriefSchema.safeParse(candidate);
   if (!parsed.success) {
-    return { ok: false, result: { status: "error", error: "Invalid brief", issues: parsed.error.issues.map((i) => i.message) } };
+    return {
+      ok: false,
+      result: {
+        status: "error",
+        error: "Invalid brief",
+        issues: parsed.error.issues.map((i) => i.message),
+      },
+    };
   }
   return { ok: true, brief: parsed.data };
 }
@@ -163,7 +202,11 @@ function invalidArgs(error: z.ZodError): ToolResult {
   };
 }
 
-export function executeTool(name: string, rawArgs: unknown, existingBrief?: EventBrief): ToolResult {
+export function executeTool(
+  name: string,
+  rawArgs: unknown,
+  existingBrief?: EventBrief
+): ToolResult {
   if (name === "generate_ideas") {
     const args = IdeasArgsSchema.safeParse(rawArgs ?? {});
     if (!args.success) return invalidArgs(args.error);
@@ -172,7 +215,8 @@ export function executeTool(name: string, rawArgs: unknown, existingBrief?: Even
       status: "ok",
       category: args.data.category,
       context: `<untrusted_data>${context}</untrusted_data>`,
-      guidance: "Give 4–6 specific, culturally appropriate ideas. Quote no prices unless a tool produced them.",
+      guidance:
+        "Give 4–6 specific, culturally appropriate ideas. Quote no prices unless a tool produced them.",
     };
   }
 

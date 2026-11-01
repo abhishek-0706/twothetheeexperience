@@ -35,7 +35,9 @@ export default function BottomNav() {
               >
                 <Icon name={tab.icon} className="text-[20px]" filled={isActive} />
                 <span className="text-label-sm font-label-sm mt-0.5">{tab.label}</span>
-                {isActive && <span aria-hidden="true" className="w-1 h-1 rounded-full bg-secondary mt-0.5" />}
+                {isActive && (
+                  <span aria-hidden="true" className="w-1 h-1 rounded-full bg-secondary mt-0.5" />
+                )}
               </Link>
             </li>
           );
