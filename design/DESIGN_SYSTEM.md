@@ -6,7 +6,7 @@ Source: two HTML mockups supplied by the product owner —
 Drop the raw HTML into `design/mockups/` so the build agent can diff against it.
 
 Both mockups share an identical Tailwind config. That config, cleaned and corrected, is in
-`design/tailwind.tokens.js` and is the **single source of truth** for the build. The mockups
+`apps/web/tailwind.tokens.js` and is the **single source of truth** for the build. The mockups
 are prototype HTML (Tailwind CDN, inline config); they are reference, not shippable code.
 
 ---

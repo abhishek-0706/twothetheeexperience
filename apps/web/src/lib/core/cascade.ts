@@ -18,104 +18,48 @@ interface ShiftRecord {
   toMin: number;
 }
 
-/**
- * Build an adjacency list of dependents: for each item, which items depend on it.
- */
-function buildDependentsMap(
-  items: RunOfShowItem[]
-): Map<string, string[]> {
-  const map = new Map<string, string[]>();
+function buildDependentsMap(items: RunOfShowItem[]): Map<string, string[]> {
+  const map = new Map<string, string[]>(items.map((item) => [item.id, []]));
   for (const item of items) {
-    if (!map.has(item.id)) map.set(item.id, []);
-  }
-  for (const item of items) {
-    for (const dep of item.dependsOn) {
-      const list = map.get(dep);
-      if (list) list.push(item.id);
-    }
+    for (const dep of item.dependsOn) map.get(dep)?.push(item.id);
   }
   return map;
 }
 
-/**
- * Topological sort (Kahn's algorithm) starting from a given set of IDs,
- * returning only downstream reachable items.
- */
-function topologicalOrder(
-  startIds: string[],
-  items: RunOfShowItem[]
+/** Items downstream of `startId`, in dependency order (Kahn's algorithm over the reachable subgraph). */
+function downstreamInTopologicalOrder(
+  startId: string,
+  itemMap: Map<string, RunOfShowItem>,
+  dependents: Map<string, string[]>
 ): string[] {
-  const itemMap = new Map(items.map((it) => [it.id, it]));
-  const dependents = buildDependentsMap(items);
-
-  // BFS from startIds to collect all reachable downstream IDs
   const reachable = new Set<string>();
-  const queue = [...startIds];
-  while (queue.length > 0) {
-    const id = queue.shift()!;
-    const deps = dependents.get(id) ?? [];
-    for (const dep of deps) {
+  const frontier = [startId];
+  for (let head = 0; head < frontier.length; head++) {
+    for (const dep of dependents.get(frontier[head] ?? "") ?? []) {
       if (!reachable.has(dep)) {
         reachable.add(dep);
-        queue.push(dep);
+        frontier.push(dep);
       }
     }
   }
 
-  // Kahn's algorithm over reachable items only
-  // In-degree counts only edges within reachable set + startIds
-  const relevant = new Set([...startIds, ...reachable]);
+  // The start item is already shifted, so only edges inside the reachable set count.
   const inDegree = new Map<string, number>();
   for (const id of reachable) {
-    const item = itemMap.get(id)!;
-    let deg = 0;
-    for (const dep of item.dependsOn) {
-      if (relevant.has(dep)) deg++;
-    }
-    inDegree.set(id, deg);
+    const deps = itemMap.get(id)?.dependsOn ?? [];
+    inDegree.set(id, deps.filter((dep) => reachable.has(dep)).length);
   }
 
-  // Start nodes are the startIds themselves (already shifted)
-  const topoQueue: string[] = [];
-  for (const id of reachable) {
-    if (inDegree.get(id) === 0) topoQueue.push(id);
-  }
-
-  // Also seed with direct dependents of startIds that have all deps met
-  // after we process startIds
-  const sorted: string[] = [];
-  const processed = new Set(startIds);
-
-  // Decrease in-degree for items depending on startIds
-  for (const startId of startIds) {
-    for (const depId of dependents.get(startId) ?? []) {
-      if (reachable.has(depId)) {
-        inDegree.set(depId, (inDegree.get(depId) ?? 1) - 1);
-      }
+  const order = [...reachable].filter((id) => inDegree.get(id) === 0);
+  for (let head = 0; head < order.length; head++) {
+    for (const dep of dependents.get(order[head] ?? "") ?? []) {
+      if (!reachable.has(dep)) continue;
+      const remaining = (inDegree.get(dep) ?? 0) - 1;
+      inDegree.set(dep, remaining);
+      if (remaining === 0) order.push(dep);
     }
   }
-
-  // Re-seed queue
-  topoQueue.length = 0;
-  for (const id of reachable) {
-    if ((inDegree.get(id) ?? 0) <= 0) topoQueue.push(id);
-  }
-
-  while (topoQueue.length > 0) {
-    const id = topoQueue.shift()!;
-    sorted.push(id);
-    processed.add(id);
-    for (const depId of dependents.get(id) ?? []) {
-      if (!reachable.has(depId)) continue;
-      const newDeg = (inDegree.get(depId) ?? 1) - 1;
-      inDegree.set(depId, newDeg);
-      if (newDeg <= 0 && !processed.has(depId)) {
-        topoQueue.push(depId);
-      }
-    }
-  }
-
-  return sorted;
+  return order;
 }
 
 export function cascadeDelay(
@@ -164,10 +108,11 @@ export function cascadeDelay(
   for (const v of target.vendorLeads) affectedVendors.add(v);
 
   // Get downstream items in topological order
-  const downstream = topologicalOrder([targetId], cloned);
+  const downstream = downstreamInTopologicalOrder(targetId, itemMap, buildDependentsMap(cloned));
 
   for (const itemId of downstream) {
-    const item = itemMap.get(itemId)!;
+    const item = itemMap.get(itemId);
+    if (!item) continue;
 
     // Compute the earliest this item can start based on its dependencies
     let earliestStart = item.startMin;

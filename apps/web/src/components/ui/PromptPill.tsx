@@ -1,37 +1,39 @@
-"use client";
+import Icon from "@/components/ui/Icon";
 
 interface PromptPillProps {
   label: string;
   icon: string;
-  onClick?: () => void;
+  onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
 }
 
 export function PromptPill({ label, icon, onClick }: PromptPillProps) {
   return (
     <button
+      type="button"
       onClick={onClick}
-      className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-outline-variant bg-surface-container-lowest hover:bg-accent-container active:scale-95 transition-all duration-150 whitespace-nowrap"
+      className="shrink-0 inline-flex items-center gap-2 min-h-[44px] px-3.5 py-2 rounded-full bg-surface-container-lowest border border-secondary/30 hover:bg-accent-container active:scale-95 transition-all text-left shadow-sm"
     >
-      <span className="w-7 h-7 rounded-full bg-secondary-fixed/40 flex items-center justify-center">
-        <span className="material-symbols-outlined text-[16px] text-secondary">
-          {icon}
-        </span>
+      <span className="w-6 h-6 rounded-full bg-secondary-fixed/40 flex items-center justify-center text-secondary">
+        <Icon name={icon} className="text-[14px]" />
       </span>
-      <span className="text-label-md font-label-md text-primary">{label}</span>
+      <span className="font-label-md text-label-md text-primary font-medium whitespace-nowrap">{label}</span>
     </button>
   );
 }
 
 interface PromptPillRowProps {
-  pills: { label: string; icon: string; onClick?: () => void }[];
+  label: string;
+  pills: PromptPillProps[];
 }
 
-export default function PromptPillRow({ pills }: PromptPillRowProps) {
+export default function PromptPillRow({ label, pills }: PromptPillRowProps) {
   return (
-    <div className="flex gap-2 overflow-x-auto custom-scroll pb-1">
+    <ul aria-label={label} className="flex overflow-x-auto pb-1 gap-2 custom-scroll -mx-margin px-margin">
       {pills.map((pill) => (
-        <PromptPill key={pill.label} {...pill} />
+        <li key={pill.label} className="shrink-0">
+          <PromptPill {...pill} />
+        </li>
       ))}
-    </div>
+    </ul>
   );
 }

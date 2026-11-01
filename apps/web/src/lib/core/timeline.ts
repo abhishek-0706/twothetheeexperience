@@ -2,17 +2,13 @@ import type { EventBrief, TimelineTask } from "./types";
 import { TimelineTaskSchema } from "./types";
 import { TASK_TEMPLATES } from "../locale/in-IN";
 
-/**
- * Deterministic timeline generator.
- *
- * Maps locale-defined task templates onto concrete due dates by subtracting
- * tMinusDays from the event date. Skips tasks whose due date is already past.
- * Pure function, no side effects, no model calls.
- */
+const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
 
 function parseDate(iso: string): Date {
-  const [y, m, d] = iso.split("-").map(Number);
-  return new Date(y, m - 1, d);
+  const match = ISO_DATE.exec(iso);
+  if (!match) throw new Error(`Expected YYYY-MM-DD, got "${iso}"`);
+  const [, y, m, d] = match;
+  return new Date(Number(y), Number(m) - 1, Number(d));
 }
 
 function formatDate(date: Date): string {
@@ -28,44 +24,32 @@ function subtractDays(iso: string, days: number): string {
   return formatDate(date);
 }
 
-function todayISO(): string {
-  return formatDate(new Date());
-}
-
-export function generateTimeline(brief: EventBrief): TimelineTask[] {
+/**
+ * Reverse-plans locale task templates from the event date, dropping tasks already past.
+ * `today` is injectable so the function stays deterministic under test.
+ */
+export function generateTimeline(
+  brief: EventBrief,
+  today: string = formatDate(new Date())
+): TimelineTask[] {
   const { eventFamily, eventDate } = brief;
-  const today = todayISO();
 
-  const applicable = TASK_TEMPLATES.filter((t) =>
-    t.families.includes(eventFamily)
-  );
-
-  const tasks: TimelineTask[] = [];
-
-  for (const template of applicable) {
-    const dueDate = subtractDays(eventDate, template.tMinusDays);
-
-    // Skip tasks whose due date is in the past
-    if (dueDate < today) continue;
-
-    const task: TimelineTask = TimelineTaskSchema.parse({
-      id: template.id,
-      title: template.title,
-      category: template.category,
-      tMinusDays: template.tMinusDays,
-      dueDate,
-      dependsOn: template.dependsOn,
-      status: "todo",
-      priority: template.priority,
-      subEventId: null,
-      whyItMatters: template.whyItMatters,
-    });
-
-    tasks.push(task);
-  }
-
-  // Sort by dueDate ascending
-  tasks.sort((a, b) => (a.dueDate < b.dueDate ? -1 : a.dueDate > b.dueDate ? 1 : 0));
-
-  return tasks;
+  return TASK_TEMPLATES.filter((t) => t.families.includes(eventFamily))
+    .map((template) => ({ template, dueDate: subtractDays(eventDate, template.tMinusDays) }))
+    .filter(({ dueDate }) => dueDate >= today)
+    .map(({ template, dueDate }) =>
+      TimelineTaskSchema.parse({
+        id: template.id,
+        title: template.title,
+        category: template.category,
+        tMinusDays: template.tMinusDays,
+        dueDate,
+        dependsOn: template.dependsOn,
+        status: "todo",
+        priority: template.priority,
+        subEventId: null,
+        whyItMatters: template.whyItMatters,
+      })
+    )
+    .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
 }

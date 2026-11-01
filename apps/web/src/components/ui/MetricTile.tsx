@@ -1,9 +1,13 @@
+import Icon from "@/components/ui/Icon";
+import ProgressBar from "@/components/ui/ProgressBar";
+
 interface MetricTileProps {
   label: string;
   value: string;
   subLabel?: string;
   icon: string;
   iconColor?: string;
+  /** 0–1; omit to hide the bar */
   progress?: number;
 }
 
@@ -16,31 +20,21 @@ export default function MetricTile({
   progress,
 }: MetricTileProps) {
   return (
-    <div className="luxury-card rounded-xl bg-surface-container-lowest p-space-md flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <span className="text-label-sm font-label-sm uppercase tracking-wider text-on-surface-variant">
-          {label}
-        </span>
-        <span className={`material-symbols-outlined text-[20px] ${iconColor}`}>
-          {icon}
-        </span>
+    <div className="bg-surface-container-lowest p-3 rounded-xl border border-outline-variant/20 shadow-sm flex flex-col justify-between">
+      <div className="flex items-center justify-between text-on-surface-variant">
+        <span className="font-label-sm text-label-sm uppercase tracking-wide">{label}</span>
+        <Icon name={icon} className={`text-[15px] ${iconColor}`} />
       </div>
-
-      <span className="text-title-md font-title-md text-primary">{value}</span>
-
-      {subLabel && (
-        <span className="text-label-sm font-label-sm text-on-surface-variant">
-          {subLabel}
-        </span>
-      )}
-
-      {progress != null && (
-        <div className="w-full h-1 rounded-full bg-surface-container-high mt-1">
-          <div
-            className="h-full rounded-full bg-secondary transition-all duration-300"
-            style={{ width: `${Math.min(progress * 100, 100)}%` }}
-          />
-        </div>
+      <div className="mt-2">
+        <p className="font-title-md text-title-md text-primary leading-tight">{value}</p>
+        {subLabel && <p className="font-label-sm text-[11px] text-on-surface-variant">{subLabel}</p>}
+      </div>
+      {progress !== undefined && (
+        <ProgressBar
+          value={progress * 100}
+          label={`${label} progress`}
+          className="h-1 bg-surface-container mt-2.5"
+        />
       )}
     </div>
   );

@@ -1,5 +1,5 @@
 /**
- * CelebrateAI design tokens — single source of truth.
+ * twothetheeexperience design tokens — single source of truth.
  *
  * Extracted verbatim from the product-owner mockups, plus:
  *   [+] semantic tokens promoted from ad-hoc hex values used in the mockup markup
@@ -131,10 +131,22 @@ module.exports = {
       },
 
       fontSize: {
-        "display-hero": ["56px", { lineHeight: "64px", letterSpacing: "-0.02em", fontWeight: "600" }],
-        "display-hero-mobile": ["38px", { lineHeight: "44px", letterSpacing: "-0.01em", fontWeight: "600" }],
-        "headline-lg": ["36px", { lineHeight: "44px", letterSpacing: "-0.015em", fontWeight: "600" }],
-        "headline-lg-mobile": ["28px", { lineHeight: "34px", letterSpacing: "-0.01em", fontWeight: "600" }],
+        "display-hero": [
+          "56px",
+          { lineHeight: "64px", letterSpacing: "-0.02em", fontWeight: "600" },
+        ],
+        "display-hero-mobile": [
+          "38px",
+          { lineHeight: "44px", letterSpacing: "-0.01em", fontWeight: "600" },
+        ],
+        "headline-lg": [
+          "36px",
+          { lineHeight: "44px", letterSpacing: "-0.015em", fontWeight: "600" },
+        ],
+        "headline-lg-mobile": [
+          "28px",
+          { lineHeight: "34px", letterSpacing: "-0.01em", fontWeight: "600" },
+        ],
         "headline-md": ["24px", { lineHeight: "32px", letterSpacing: "0em", fontWeight: "500" }],
         "headline-sm": ["20px", { lineHeight: "28px", letterSpacing: "0em", fontWeight: "500" }],
         "title-md": ["16px", { lineHeight: "24px", letterSpacing: "-0.01em", fontWeight: "600" }],

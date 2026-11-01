@@ -14,6 +14,17 @@
     @apply bg-background text-on-surface antialiased;
     font-family: var(--font-jakarta), system-ui, sans-serif;
   }
+
+  /* Tailwind's default placeholder grey is 2.3:1 on our surfaces; outline is 4.9:1. */
+  input::placeholder,
+  textarea::placeholder {
+    color: theme("colors.outline");
+    opacity: 1;
+  }
+
+  summary {
+    cursor: pointer;
+  }
 }
 
 @layer components {
@@ -62,13 +73,40 @@
   -webkit-font-smoothing: antialiased;
 }
 
-/* DESIGN_SYSTEM.md §8 — reduced-motion guard for the live-sync pulse and active glow. */
+/* One focus indicator for every interactive element (WCAG 2.4.7 / 2.4.11).
+   Secondary is 6.1:1 against the surface it sits on thanks to the offset. */
+:focus-visible {
+  outline: 3px solid theme("colors.secondary");
+  outline-offset: 2px;
+}
+
+/* Windows High Contrast / forced colours: let the system pick the ring colour. */
+@media (forced-colors: active) {
+  :focus-visible {
+    outline-color: Highlight;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* DESIGN_SYSTEM.md §8 — reduced-motion guard for the live-sync pulse, active glow,
+   press-scale effects and smooth scrolling. */
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto !important;
+  }
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
     transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
   }
 }

@@ -23,12 +23,20 @@ export const BudgetFlexibility = z.enum(["hard", "soft", "unknown"]);
 export const EventBriefSchema = z.object({
   eventFamily: EventFamily,
   eventSubtype: z.string().min(1),
-  eventDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  eventDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .refine((d) => {
+      const parsed = new Date(`${d}T00:00:00Z`);
+      return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === d;
+    }, {
+      message: "Not a real calendar date",
+    }),
   dateConfidence: z.enum(["fixed", "window", "undecided"]).default("fixed"),
   city: z.string().min(1),
   cityTier: z.enum(["metro", "tier1", "tier2", "destination"]).default("metro"),
   guestCount: z.number().int().positive(),
-  budget: MoneySchema,
+  budget: MoneySchema.extend({ amountMinor: z.number().int().positive() }),
   budgetFlexibility: BudgetFlexibility.default("soft"),
   /** User-DECLARED only. Never inferred from a name. See BUILD_PROMPT.md §7. */
   communities: z.array(z.string()).default([]),
@@ -90,7 +98,11 @@ export const RunOfShowItemSchema = z.object({
   id: z.string().min(1),
   title: z.string().min(1),
   /** Minutes from midnight, local venue time. Integer math only. */
-  startMin: z.number().int().min(0).max(24 * 60),
+  startMin: z
+    .number()
+    .int()
+    .min(0)
+    .max(24 * 60),
   durationMin: z.number().int().positive(),
   /** Floor the item can compress to when absorbing a delay. */
   minDurationMin: z.number().int().positive(),
@@ -107,9 +119,7 @@ export const RunOfShowItemSchema = z.object({
   location: z.string().nullable().default(null),
   status: z.enum(["completed", "active", "upcoming"]).default("upcoming"),
   tag: z.string().nullable().default(null),
-  checklist: z
-    .array(z.object({ label: z.string(), done: z.boolean() }))
-    .default([]),
+  checklist: z.array(z.object({ label: z.string(), done: z.boolean() })).default([]),
 });
 export type RunOfShowItem = z.infer<typeof RunOfShowItemSchema>;
 

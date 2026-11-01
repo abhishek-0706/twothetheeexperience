@@ -69,21 +69,15 @@ export function largestRemainderSplit(total: Money, weights: number[]): Money[] 
 
   const exact = weights.map((w) => (total.amountMinor * w) / weightSum);
   const floored = exact.map((e) => Math.floor(e));
-  let residue = total.amountMinor - floored.reduce((a, b) => a + b, 0);
+  const residue = total.amountMinor - floored.reduce((a, b) => a + b, 0);
 
   const order = exact
     .map((e, i) => ({ i, frac: e - Math.floor(e) }))
     .sort((a, b) => b.frac - a.frac || a.i - b.i);
 
-  const result = [...floored];
-  let k = 0;
-  while (residue > 0 && order.length > 0) {
-    result[order[k % order.length].i] += 1;
-    residue -= 1;
-    k += 1;
-  }
-
-  return result.map((amount) => money(amount, total.currency));
+  // Fractional parts sum to less than weights.length, so residue never exceeds the item count.
+  const bumped = new Set(order.slice(0, residue).map((o) => o.i));
+  return floored.map((amount, i) => money(amount + (bumped.has(i) ? 1 : 0), total.currency));
 }
 
 const FORMATTERS = new Map<string, Intl.NumberFormat>();
@@ -111,7 +105,9 @@ export function formatMoneyCompact(m: Money, locale = "en-IN"): string {
   const symbol = m.currency === "INR" ? "₹" : m.currency === "USD" ? "$" : `${m.currency} `;
 
   if (locale === "en-IN" || m.currency === "INR") {
-    if (Math.abs(major) >= 1e7) return `${symbol}${(major / 1e7).toFixed(2).replace(/\.00$/, "")}Cr`;
+    if (Math.abs(major) >= 1e7) {
+      return `${symbol}${(major / 1e7).toFixed(2).replace(/\.00$/, "")}Cr`;
+    }
     if (Math.abs(major) >= 1e5) return `${symbol}${(major / 1e5).toFixed(1).replace(/\.0$/, "")}L`;
     if (Math.abs(major) >= 1e3) return `${symbol}${(major / 1e3).toFixed(1).replace(/\.0$/, "")}k`;
     return `${symbol}${Math.round(major)}`;

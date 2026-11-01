@@ -1,85 +1,69 @@
 import type { EventBrief, BudgetPlan, TimelineTask, Conflict } from "./types";
 import { ConflictSchema } from "./types";
 import { sum } from "./money";
-import { costBandFor } from "../locale/in-IN";
+import { costBandFor, type CityTier } from "../locale/in-IN";
 
-/**
- * Conflict detector.
- *
- * Runs a battery of deterministic checks against the brief, budget, and
- * timeline. Returns validated Conflict[] with severity and references.
- * Pure function, no side effects, no model calls.
- */
+const MS_PER_DAY = 86_400_000;
+const MIN_WEDDING_LEAD_DAYS = 30;
+const MAX_DRIFT_MINOR = 1;
 
-function todayISO(): string {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
-function daysBetween(a: string, b: string): number {
-  const da = new Date(a + "T00:00:00");
-  const db = new Date(b + "T00:00:00");
-  return Math.round((db.getTime() - da.getTime()) / (86400 * 1000));
-}
-
-/** Kahn's algorithm cycle detection. Returns the IDs forming cycles, if any. */
-function findCycles(tasks: TimelineTask[]): string[] {
-  const ids = new Set(tasks.map((t) => t.id));
-  const inDegree = new Map<string, number>();
-  const adjacency = new Map<string, string[]>();
-
-  for (const t of tasks) {
-    if (!inDegree.has(t.id)) inDegree.set(t.id, 0);
-    if (!adjacency.has(t.id)) adjacency.set(t.id, []);
-  }
-
-  for (const t of tasks) {
-    for (const dep of t.dependsOn) {
-      if (!ids.has(dep)) continue; // external dep, skip
-      adjacency.get(dep)!.push(t.id);
-      inDegree.set(t.id, (inDegree.get(t.id) ?? 0) + 1);
-    }
-  }
-
-  const queue: string[] = [];
-  for (const [id, deg] of inDegree) {
-    if (deg === 0) queue.push(id);
-  }
-
-  let processed = 0;
-  while (queue.length > 0) {
-    const id = queue.shift()!;
-    processed++;
-    for (const dep of adjacency.get(id) ?? []) {
-      const newDeg = (inDegree.get(dep) ?? 1) - 1;
-      inDegree.set(dep, newDeg);
-      if (newDeg === 0) queue.push(dep);
-    }
-  }
-
-  if (processed === ids.size) return [];
-
-  // IDs with remaining in-degree are in cycles
-  return [...inDegree.entries()]
-    .filter(([, deg]) => deg > 0)
-    .map(([id]) => id);
-}
-
-/** Typical venue capacity by city tier (guests). */
-const TYPICAL_CAPACITY: Record<string, number> = {
+/** Typical largest venue capacity by city tier (guests). */
+const TYPICAL_CAPACITY: Record<CityTier, number> = {
   metro: 1500,
   tier1: 1000,
   tier2: 600,
   destination: 300,
 };
 
+function localISODate(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function daysBetween(fromISO: string, toISO: string): number {
+  const from = new Date(`${fromISO}T00:00:00`).getTime();
+  const to = new Date(`${toISO}T00:00:00`).getTime();
+  return Math.round((to - from) / MS_PER_DAY);
+}
+
+/** Kahn's algorithm: returns the IDs left with unmet dependencies, i.e. those in a cycle. */
+function findCycles(tasks: TimelineTask[]): string[] {
+  const inDegree = new Map<string, number>(tasks.map((t) => [t.id, 0]));
+  const dependents = new Map<string, string[]>(tasks.map((t) => [t.id, []]));
+
+  for (const task of tasks) {
+    for (const dep of task.dependsOn) {
+      const list = dependents.get(dep);
+      if (!list) continue;
+      list.push(task.id);
+      inDegree.set(task.id, (inDegree.get(task.id) ?? 0) + 1);
+    }
+  }
+
+  const order = [...inDegree].filter(([, deg]) => deg === 0).map(([id]) => id);
+  for (let head = 0; head < order.length; head++) {
+    for (const dep of dependents.get(order[head] ?? "") ?? []) {
+      const remaining = (inDegree.get(dep) ?? 0) - 1;
+      inDegree.set(dep, remaining);
+      if (remaining === 0) order.push(dep);
+    }
+  }
+
+  if (order.length === inDegree.size) return [];
+  return [...inDegree].filter(([, deg]) => deg > 0).map(([id]) => id);
+}
+
+/**
+ * Deterministic checks over the brief, budget and timeline. `today` is injectable so
+ * date-based checks are reproducible under test.
+ */
 export function detectConflicts(
   brief: EventBrief,
   budget: BudgetPlan,
-  tasks: TimelineTask[]
+  tasks: TimelineTask[],
+  today: string = localISODate(new Date())
 ): Conflict[] {
   const conflicts: Conflict[] = [];
 
@@ -88,10 +72,9 @@ export function detectConflicts(
     budget.lines.map((l) => l.allocated),
     budget.total.currency
   );
-  const expectedAllocatable =
-    budget.total.amountMinor - budget.contingency.amountMinor;
+  const expectedAllocatable = budget.total.amountMinor - budget.contingency.amountMinor;
   const drift = Math.abs(linesSum.amountMinor - expectedAllocatable);
-  if (drift > 1) {
+  if (drift > MAX_DRIFT_MINOR) {
     conflicts.push(
       ConflictSchema.parse({
         kind: "budget_overallocated",
@@ -120,7 +103,6 @@ export function detectConflicts(
   }
 
   // 3. Event date in the past
-  const today = todayISO();
   if (brief.eventDate < today) {
     conflicts.push(
       ConflictSchema.parse({
@@ -135,7 +117,7 @@ export function detectConflicts(
   // 4. Lead time < 30 days for a wedding
   if (brief.eventFamily === "wedding") {
     const leadDays = daysBetween(today, brief.eventDate);
-    if (leadDays >= 0 && leadDays < 30) {
+    if (leadDays >= 0 && leadDays < MIN_WEDDING_LEAD_DAYS) {
       conflicts.push(
         ConflictSchema.parse({
           kind: "lead_time_too_short",
@@ -162,7 +144,7 @@ export function detectConflicts(
 
   // 6. Guest count exceeds typical venue capacity for the city tier
   const capacityCap = TYPICAL_CAPACITY[brief.cityTier];
-  if (capacityCap !== undefined && brief.guestCount > capacityCap) {
+  if (brief.guestCount > capacityCap) {
     conflicts.push(
       ConflictSchema.parse({
         kind: "capacity_exceeded",

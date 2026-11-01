@@ -1,55 +1,42 @@
 interface ReadinessRingProps {
   percentage: number;
-  size?: number;
+  label?: string;
 }
 
-export default function ReadinessRing({
-  percentage,
-  size = 120,
-}: ReadinessRingProps) {
-  const strokeWidth = 8;
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (percentage / 100) * circumference;
-
+/** Compact readiness gauge. The SVG is decorative; the value is exposed via role="progressbar". */
+export default function ReadinessRing({ percentage, label = "Planning readiness" }: ReadinessRingProps) {
+  const value = Math.min(Math.max(Math.round(percentage), 0), 100);
   return (
     <div
-      className="relative inline-flex items-center justify-center"
-      style={{ width: size, height: size }}
+      role="progressbar"
+      aria-label={label}
+      aria-valuenow={value}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuetext={`${value}% planned`}
+      className="relative flex flex-col items-center justify-center w-20 h-20 bg-surface-container-low/60 rounded-full border border-secondary/20 shadow-inner"
     >
-      <svg width={size} height={size} className="-rotate-90">
-        {/* Track */}
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={strokeWidth}
+      <svg className="w-16 h-16 -rotate-90" viewBox="0 0 36 36" aria-hidden="true" focusable="false">
+        <path
           className="text-surface-variant"
-        />
-        {/* Progress arc */}
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
+          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
           fill="none"
           stroke="currentColor"
-          strokeWidth={strokeWidth}
+          strokeWidth="3"
+        />
+        <path
+          className="text-secondary"
+          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+          fill="none"
+          stroke="currentColor"
+          strokeDasharray={`${value}, 100`}
           strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          className="text-secondary transition-all duration-500"
+          strokeWidth="3"
         />
       </svg>
-      {/* Center text */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="font-headline-sm text-headline-sm text-primary">
-          {percentage}%
-        </span>
-        <span className="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider">
-          Planned
-        </span>
+      <div aria-hidden="true" className="absolute inset-0 flex flex-col items-center justify-center text-center">
+        <span className="font-headline-sm text-[15px] font-semibold text-primary leading-none">{value}%</span>
+        <span className="font-label-sm text-[10px] uppercase tracking-wider text-on-surface-variant">Planned</span>
       </div>
     </div>
   );
