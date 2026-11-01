@@ -2,7 +2,7 @@ import type { Config } from "tailwindcss";
 
 /* eslint-disable @typescript-eslint/no-require-imports */
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const tokens = require("../../design/tailwind.tokens.js");
+const tokens = require("./tailwind.tokens.js");
 
 /**
  * The theme is NOT defined here. It is defined once in design/tailwind.tokens.js and
