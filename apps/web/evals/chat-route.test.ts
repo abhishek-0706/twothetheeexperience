@@ -177,8 +177,9 @@ describe("POST /api/chat — rate limiting", () => {
   });
 
   it("tracks clients independently", async () => {
-    for (let i = 0; i < RATE_LIMIT_MAX_REQUESTS; i++)
-      {await POST(chatRequest(null, { ip: "203.0.113.8", raw: "{" }));}
+    for (let i = 0; i < RATE_LIMIT_MAX_REQUESTS; i++) {
+      await POST(chatRequest(null, { ip: "203.0.113.8", raw: "{" }));
+    }
     const other = await POST(chatRequest(null, { ip: "203.0.113.9", raw: "{" }));
     expect(other.status).toBe(400);
   });

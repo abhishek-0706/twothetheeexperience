@@ -49,7 +49,7 @@ const MAX_MESSAGES = 30;
 const MAX_MESSAGE_CHARS = 4000;
 const MAX_TOOL_ROUNDS = 5;
 const MAX_RETRY_ROUNDS = 2;
-const MODEL_CALL_TIMEOUT_MS = 40_000;
+const MODEL_CALL_TIMEOUT_MS = 20_000;
 const TURN_DEADLINE_MS = 50_000;
 
 const ChatMessageSchema = z
